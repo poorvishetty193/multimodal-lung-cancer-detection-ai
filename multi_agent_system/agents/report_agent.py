@@ -2,7 +2,7 @@
 import logging
 from typing import Dict, Any
 
-from multiAgent_system.tools.google_gemini_tool import GeminiTool
+from multi_agent_system.tools.google_gemini_tool import GeminiTool
 
 logger = logging.getLogger(__name__)
 

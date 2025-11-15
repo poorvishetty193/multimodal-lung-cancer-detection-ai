@@ -21,8 +21,8 @@ fusion_agent = FusionAgent(device="cpu", fusion_weights=None, metadata_weights=N
 report_agent = ReportAgent(api_key_env_var="GEMINI_API_KEY")
 
 # --- update these to actual test files on your machine ---
-CT_PATH = "sample_ct_folder"   # replace with DICOM folder or .nii file
-AUDIO_PATH = "example.wav"     # replace with a real wav file
+CT_PATH = "dummy_ct.nii"
+AUDIO_PATH = "dummy_audio.wav"
 
 # example metadata
 metadata = {
@@ -34,7 +34,8 @@ metadata = {
 
 def main():
     print("Running CT Agent ...")
-    ct_out = ct_agent.run(CT_PATH, is_dicom=True)
+    ct_out = ct_agent.run(CT_PATH, is_dicom=False)
+
     print("CT score:", ct_out["ct_score"])
 
     print("Running Audio Agent ...")

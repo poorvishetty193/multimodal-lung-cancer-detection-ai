@@ -10,10 +10,9 @@ Full CT inference pipeline:
 import torch
 import numpy as np
 
-from ct_pipeline.preprocess_ct import preprocess_ct
-from ct_pipeline.ct_unet_model import UNet
-from ct_pipeline.ct_classifier import CT3DClassifier
-
+from ml_service.ct_pipeline.preprocess_ct import preprocess_ct
+from ml_service.ct_pipeline.ct_unet_model import UNet
+from ml_service.ct_pipeline.ct_classifier import CT3DClassifier
 
 # -------------------------------------------
 # Load Models

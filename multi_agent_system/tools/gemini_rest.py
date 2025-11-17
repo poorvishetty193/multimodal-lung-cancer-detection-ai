@@ -1,40 +1,43 @@
+# multi_agent_system/tools/gemini_rest.py
 import os
 import requests
+import json
+
+# NEW: Pick a valid model from your list_models output
+GEMINI_MODEL = "models/gemini-flash-latest"
 
 API_KEY = os.getenv("GEMINI_API_KEY")
-
-# Use a working model from your model list:
-MODEL_NAME = "models/gemini-flash-latest"
-
-BASE_URL = f"https://generativelanguage.googleapis.com/v1beta/{MODEL_NAME}:generateContent"
+API_URL = f"https://generativelanguage.googleapis.com/v1beta/{GEMINI_MODEL}:generateContent"
 
 
-def generate_text(prompt: str) -> str:
-    """Send a prompt to Gemini via REST API."""
+def generate_gemini_report(prompt: str) -> str:
+    """
+    Calls Gemini via REST API and returns text.
+    """
+
     if not API_KEY:
-        return "[ERROR] GEMINI_API_KEY not found in environment variables."
+        return "[ERROR] GEMINI_API_KEY is missing. Set it with:  setx GEMINI_API_KEY \"YOUR_KEY\""
 
     headers = {
         "Content-Type": "application/json"
     }
 
-    payload = {
-        "contents": [{"parts": [{"text": prompt}]}]
+    body = {
+        "contents": [
+            {"parts": [{"text": prompt}]}
+        ]
     }
 
-    url = f"{BASE_URL}?key={API_KEY}"
+    params = {"key": API_KEY}
 
-    response = requests.post(url, headers=headers, json=payload)
+    response = requests.post(API_URL, headers=headers, params=params, json=body)
 
     if response.status_code != 200:
-        raise Exception(
-            f"Gemini API error {response.status_code}:\n{response.text}"
-        )
+        return f"[Gemini REST Error {response.status_code}]: {response.text}"
 
     data = response.json()
 
-    # Extract text from the response
     try:
         return data["candidates"][0]["content"]["parts"][0]["text"]
-    except Exception:
-        return str(data)
+    except:
+        return f"[Gemini Parse Error] Raw response: {json.dumps(data, indent=2)}"

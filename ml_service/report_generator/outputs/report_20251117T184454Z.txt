@@ -1,0 +1,12 @@
+FINDINGS
+A small, non-calcified solid pulmonary nodule measuring approximately 7 mm is noted within the right upper lobe. The nodule margins appear slightly irregular. There are no other dominant pulmonary masses or airspace consolidation observed. No definite mediastinal or hilar lymphadenopathy is identified.
+
+IMPRESSION
+Indeterminate pulmonary nodule detected, potentially warranting further investigation. The calculated multimodal fusion risk score is intermediate (0.480). This finding carries an indeterminate risk (CT Inference 0.4) requiring clinical correlation.
+
+RECOMMENDATIONS
+1. Follow-up low-dose CT surveillance in 6 months to assess nodule stability, consistent with current recommendations for indeterminate solid pulmonary nodules.
+2. Consideration of multidisciplinary team discussion or consultation with a pulmonologist for individualized risk stratification and management planning.
+
+CONFIDENCE
+This preliminary assessment is based on automated analysis and requires definitive confirmation by a supervising radiologist.

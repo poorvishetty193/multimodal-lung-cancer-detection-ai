@@ -1,11 +1,15 @@
-from pydantic import BaseModel, Field
-from datetime import datetime
-from typing import Dict, Any
+from pydantic import BaseModel
 
-class InferenceRecord(BaseModel):
-    ct_score: float
+class InferenceRequest(BaseModel):
+    patient_id: str
+    age: int
+    sex: str
+    ct_folder: str
+    audio_file: str
+
+class InferenceResponse(BaseModel):
+    cancer_risk: float
     audio_score: float
     fusion_score: float
-    metadata: Dict[str, Any]
     report_text: str
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    record_id: str

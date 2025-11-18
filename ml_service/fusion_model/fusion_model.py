@@ -1,18 +1,16 @@
-# fusion_model.py
 """
 Fusion Model — combines CT, Audio, and Metadata embeddings.
-Final output: cancer risk probability (0–1)
-
-Embeddings (default sizes):
-- CT embedding: 256
-- Audio embedding: 256
-- Metadata embedding: 32
+Produces final cancer-risk score (0–1).
 """
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
+import numpy as np
 
+
+# -----------------------------------------------------------
+#  FUSION MODEL ARCHITECTURE
+# -----------------------------------------------------------
 
 class FusionModel(nn.Module):
     def __init__(self,
@@ -22,12 +20,12 @@ class FusionModel(nn.Module):
                  hidden_dim=256):
         super(FusionModel, self).__init__()
 
-        # Linear layers to unify embedding dimensions
+        # Project embeddings to same dimensionality
         self.ct_proj = nn.Linear(ct_dim, hidden_dim)
         self.audio_proj = nn.Linear(audio_dim, hidden_dim)
         self.meta_proj = nn.Linear(meta_dim, hidden_dim)
 
-        # Combined fusion network
+        # Fusion head
         self.fusion_net = nn.Sequential(
             nn.Linear(hidden_dim * 3, 256),
             nn.ReLU(),
@@ -41,27 +39,69 @@ class FusionModel(nn.Module):
         )
 
     def forward(self, ct_emb, audio_emb, meta_emb):
-        """
-        All embeddings should have shape: (B, dim)
-        """
-
         ct = self.ct_proj(ct_emb)
         audio = self.audio_proj(audio_emb)
         meta = self.meta_proj(meta_emb)
 
         combined = torch.cat([ct, audio, meta], dim=1)
-
         out = self.fusion_net(combined)
-        return torch.sigmoid(out).squeeze(1)  # probability
-        
 
+        return torch.sigmoid(out).squeeze(1)
+
+
+# -----------------------------------------------------------
+#  FUSION PREDICT FUNCTION (USED BY BACKEND)
+# -----------------------------------------------------------
+
+def fusion_predict(
+        ct_embedding: np.ndarray,
+        audio_embedding: np.ndarray,
+        metadata_embedding: np.ndarray,
+        weight_path: str = None,
+        device: str = "cpu"
+    ):
+    """
+    Final prediction function used by backend.
+
+    Inputs:
+        - ct_embedding (256,)
+        - audio_embedding (256,)
+        - metadata_embedding (32,)
+    Returns:
+        - float → probability (0–1)
+    """
+
+    # Convert to tensors
+    ct_tensor = torch.tensor(ct_embedding, dtype=torch.float32).unsqueeze(0).to(device)
+    audio_tensor = torch.tensor(audio_embedding, dtype=torch.float32).unsqueeze(0).to(device)
+    meta_tensor = torch.tensor(metadata_embedding, dtype=torch.float32).unsqueeze(0).to(device)
+
+    # Load fusion model
+    model = FusionModel().to(device)
+    model.eval()
+
+    if weight_path:
+        model.load_state_dict(torch.load(weight_path, map_location=device))
+        print("[INFO] Loaded FusionModel weights.")
+    else:
+        print("[WARNING] No fusion weights provided — using untrained fusion model.")
+
+    # Run inference
+    with torch.no_grad():
+        prob = model(ct_tensor, audio_tensor, meta_tensor).item()
+
+    return float(prob)
+
+
+# -----------------------------------------------------------
+#  QUICK TEST
+# -----------------------------------------------------------
 if __name__ == "__main__":
-    # Quick test
-    model = FusionModel()
+    print("Testing Fusion Model...")
 
-    ct = torch.randn(2, 256)
-    audio = torch.randn(2, 256)
-    meta = torch.randn(2, 32)
+    ct = np.random.randn(256)
+    audio = np.random.randn(256)
+    meta = np.random.randn(32)
 
-    prob = model(ct, audio, meta)
-    print("Output:", prob.shape)
+    result = fusion_predict(ct, audio, meta)
+    print("Predicted Fusion Risk:", result)

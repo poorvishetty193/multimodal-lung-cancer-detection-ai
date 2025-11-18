@@ -1,54 +1,34 @@
-from multi_agent_system.tools.gemini_rest import generate_text
+from multi_agent_system.tools.gemini_rest import gemini_generate
+from ml_service.report_generator.local_report_model import generate_local_report
 
+class ReportGenerator:
 
-def generate_final_report(
-        ct_score: float,
-        audio_score: float,
-        metadata: dict,
-        fusion_score: float
-):
-    """
-    Generates a full clinical-style report using the Gemini REST API.
-    """
+    def generate_report(self, ct_result, audio_result, metadata, fusion_score):
 
-    prompt = f"""
-You are an AI health assistant helping generate a brief clinical-style report.
+        prompt = f"""
+You are a medical report generator. Use the following information:
 
-CT Score: {ct_score:.3f}
-Audio Score: {audio_score:.3f}
-Fusion Risk Score: {fusion_score:.3f}
+CT cancer score: {ct_result.get('cancer_risk')}
+Audio score: {audio_result.get('audio_score')}
+Patient metadata: {metadata}
+Fusion risk score: {fusion_score}
 
-Metadata:
-Age: {metadata.get("age")}
-Sex: {metadata.get("sex")}
-Smoking History (0–3): {metadata.get("smoking_history")}
-Symptoms: {", ".join(metadata.get("symptoms", []))}
+Write a radiology-style report with:
+- FINDINGS
+- IMPRESSION
+- RECOMMENDATIONS
+- CONFIDENCE
 
-Write a short medical-style summary including:
-- Findings
-- Risk interpretation
-- Recommendations
-- Confidence note
-Keep the tone conservative and non-diagnostic.
+Keep language short, factual, and clinical.
 """
 
-    result = generate_text(prompt)
-    return result
+        # 1) Try Gemini REST
+        try:
+            response = gemini_generate(prompt)
+            if response:
+                return response
+        except Exception as e:
+            print("[WARNING] Gemini failed:", e)
 
-
-if __name__ == "__main__":
-    metadata = {
-        "age": 60,
-        "sex": "male",
-        "smoking_history": 2,
-        "symptoms": ["cough", "short_breath"]
-    }
-
-    print(
-        generate_final_report(
-            ct_score=0.52,
-            audio_score=0.48,
-            metadata=metadata,
-            fusion_score=0.50
-        )
-    )
+        # 2) Fallback: Local offline model
+        return generate_local_report(ct_result, audio_result, metadata, fusion_score)

@@ -151,3 +151,31 @@ if __name__ == "__main__":
     print("\nCancer Risk Score:", result["cancer_risk"])
     print("CT Volume Shape:", result["preprocessed_ct"].shape)
     print("Mask Shape:", result["lung_mask_pred"].shape)
+
+class CTInference:
+    """
+    Wrapper class so backend can call CT inference easily.
+    """
+
+    def __init__(self, unet_weights=None, classifier_weights=None, device="cpu"):
+        self.unet_weights = unet_weights
+        self.classifier_weights = classifier_weights
+        self.device = device
+
+    def run(self, path, is_dicom=True):
+        """
+        Calls the full CT pipeline and returns dictionary:
+        {
+            "cancer_risk": float,
+            "lung_mask_pred": np.ndarray,
+            "preprocessed_ct": np.ndarray,
+            "spacing": tuple
+        }
+        """
+        return ct_full_inference(
+            path=path,
+            is_dicom=is_dicom,
+            unet_weights=self.unet_weights,
+            classifier_weights=self.classifier_weights,
+            device=self.device
+        )

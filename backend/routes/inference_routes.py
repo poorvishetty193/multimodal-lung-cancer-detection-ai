@@ -3,6 +3,8 @@ from pydantic import BaseModel
 from backend.services.inference_service import InferenceService
 
 router = APIRouter()
+inference_service = InferenceService()
+
 
 # -------------------------
 # 📌 1) Pydantic request model
@@ -35,3 +37,7 @@ async def run_inference(request: InferenceRequest):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/run-inference")
+def run_inference(request: InferenceRequest):
+    return inference_service.run_inference(request)

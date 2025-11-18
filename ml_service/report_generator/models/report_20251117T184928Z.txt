@@ -1,0 +1,13 @@
+[GEMINI-PLACEHOLDER]
+
+FINDINGS
+Automated analysis result: CT score: 0.4, Audio score: 0.6
+
+IMPRESSION
+Fusion score: 0.480. This is an automated preliminary assessment and requires radiologist confirmation.
+
+RECOMMENDATIONS
+1) Correlate clinically; 2) Consider follow-up imaging as indicated.
+
+CONFIDENCE
+Preliminary automated assessment - confirm with expert.

@@ -3,10 +3,12 @@ import Home from "./pages/Home";
 import Upload from "./pages/Upload";
 import Patients from "./pages/Patients";
 import Results from "./pages/Results";
+import ThemeToggle from "./components/ThemeToggle";
 
 export default function App() {
   return (
     <BrowserRouter>
+    <ThemeToggle />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/upload" element={<Upload />} />

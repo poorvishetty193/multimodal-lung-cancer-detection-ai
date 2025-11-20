@@ -1,52 +1,27 @@
-import { Link, useNavigate } from "react-router-dom";
-import ThemeToggle from "./ThemeToggle";
+import React from "react";
+import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 
-export default function NavBar({ user, setUser }) {
-  const navigate = useNavigate();
-
-  function handleLogout() {
-    // clear local user (and token) and redirect
-    localStorage.removeItem("auth_token");
-    setUser(null);
-    navigate("/");
-  }
-
+export default function Navbar() {
   return (
-    <nav className="w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-b dark:border-slate-700">
-      <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Link to="/" className="text-2xl font-extrabold tracking-tight">
-            Lung<span className="text-blue-600">AI</span>
-          </Link>
-          <div className="hidden md:flex gap-3 text-sm text-slate-600 dark:text-slate-300">
-            <Link to="/upload" className="hover:underline">Upload</Link>
-            <Link to="/patients" className="hover:underline">Patients</Link>
-            <Link to="/intro" className="hover:underline">About</Link>
-          </div>
-        </div>
+    <motion.nav
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="fixed top-0 left-0 w-full backdrop-blur-xl bg-white/10 border-b border-white/20 shadow-lg z-50"
+    >
+      <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+        <Link to="/" className="text-2xl font-extrabold tracking-wide text-white">
+          LungAI
+        </Link>
 
-        <div className="flex items-center gap-3">
-          <ThemeToggle />
-          {user ? (
-            <>
-              <span className="text-sm text-slate-700 dark:text-slate-200 hidden sm:inline">
-                {user.name || user.email}
-              </span>
-              <button
-                onClick={handleLogout}
-                className="bg-red-500 text-white px-3 py-1 rounded-md text-sm"
-              >
-                Logout
-              </button>
-            </>
-          ) : (
-            <>
-              <Link to="/login" className="text-sm px-3 py-1 border rounded-md">Login</Link>
-              <Link to="/signup" className="text-sm px-3 py-1 bg-blue-600 text-white rounded-md">Sign Up</Link>
-            </>
-          )}
+        <div className="flex gap-8 text-gray-200 font-semibold">
+          <Link to="/" className="hover:text-white transition">Home</Link>
+          <Link to="/upload" className="hover:text-white transition">Upload</Link>
+          <Link to="/patients" className="hover:text-white transition">Patients</Link>
+          <Link to="/login" className="hover:text-white transition">Login</Link>
         </div>
       </div>
-    </nav>
+    </motion.nav>
   );
 }

@@ -1,31 +1,38 @@
+import React from "react";
+import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 
-export default function Intro() {
+export default function Introduction() {
   return (
-    <div className="min-h-[70vh] flex items-center justify-center bg-gradient-to-b from-white to-slate-50 dark:from-slate-900 dark:to-slate-800">
-      <div className="max-w-4xl px-6 py-16 text-center rounded-2xl shadow-lg bg-white/60 dark:bg-slate-900/60 backdrop-blur-md">
-        <h1 className="text-4xl md:text-5xl font-extrabold mb-4">
-          Multimodal Lung Cancer Detection AI
-        </h1>
-        <p className="text-slate-600 dark:text-slate-300 mb-6">
-          Combine CT segmentation, audio analysis and clinical metadata into a single
-          multimodal risk score — built for clinicians and research.
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-800 text-white p-10 flex items-center justify-center">
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.7 }}
+        className="max-w-3xl text-center p-10 rounded-3xl bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl"
+      >
+        <h1 className="text-5xl font-extrabold mb-6">Lung Cancer Detection AI</h1>
+
+        <p className="text-gray-300 text-lg leading-relaxed mb-8">
+          This cutting-edge AI platform analyzes **CT scans**, **lung audio**, and **patient metadata** to provide an accurate and early
+          prediction of potential lung cancer risk. Our system uses multimodal deep learning pipelines—UNet segmentation, 3D CT
+          classification, CRNN audio modeling, and fusion neural networks—to deliver a detailed medical-style report.
         </p>
 
-        <div className="flex items-center justify-center gap-4">
-          <Link to="/upload" className="px-6 py-3 bg-blue-600 text-white rounded-md shadow">
-            Start Diagnosis
-          </Link>
-          <Link to="/patients" className="px-6 py-3 border rounded-md text-slate-700 dark:text-slate-200">
-            Patient Records
-          </Link>
-        </div>
+        <p className="text-gray-300 text-lg leading-relaxed mb-8">
+          Built for doctors, radiologists, and research professionals, this tool enhances diagnostic speed, improves reliability,
+          and ensures consistent assessment to support early detection.
+        </p>
 
-        <div className="mt-10 text-left text-sm text-slate-600 dark:text-slate-300 space-y-3">
-          <p><b>How it works:</b> CT slices are preprocessed and segmented with a UNet, audio is analyzed with a CRNN and a fusion model combines embeddings and metadata to produce a risk score.</p>
-          <p><b>Clinical use:</b> Intended for research / decision-support. Always confirm with a radiologist.</p>
-        </div>
-      </div>
+        <motion.div whileHover={{ scale: 1.05 }}>
+          <Link
+            to="/login"
+            className="px-8 py-4 bg-blue-600 hover:bg-blue-700 rounded-xl text-lg font-semibold shadow-lg"
+          >
+            Get Started
+          </Link>
+        </motion.div>
+      </motion.div>
     </div>
   );
 }

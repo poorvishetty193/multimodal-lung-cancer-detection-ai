@@ -1,33 +1,77 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { authSignup } from "../api/backend";
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 
 export default function Signup() {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
-  const navigate = useNavigate();
 
-  async function submit(e) {
+  const handleSignup = (e) => {
     e.preventDefault();
-    try {
-      await authSignup({ name, email, password });
-      alert("Account created. Please login.");
-      navigate("/login");
-    } catch (err) {
-      alert(err?.response?.data?.message || "Signup failed");
-    }
-  }
+    console.log("Signing up:", name, email, password);
+  };
 
   return (
-    <div className="max-w-md mx-auto mt-16 p-6 bg-white/60 dark:bg-slate-900/60 rounded-xl shadow-lg backdrop-blur">
-      <h2 className="text-2xl font-bold mb-4">Create account</h2>
-      <form onSubmit={submit} className="space-y-4">
-        <input className="w-full p-3 border rounded" placeholder="Full name" value={name} onChange={(e)=>setName(e.target.value)} />
-        <input className="w-full p-3 border rounded" placeholder="Email" value={email} onChange={(e)=>setEmail(e.target.value)} />
-        <input type="password" className="w-full p-3 border rounded" placeholder="Password" value={password} onChange={(e)=>setPassword(e.target.value)} />
-        <button className="w-full bg-green-600 text-white p-3 rounded">Create account</button>
-      </form>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 to-gray-800 text-white p-6">
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="bg-white/10 backdrop-blur-xl p-10 rounded-2xl shadow-xl w-full max-w-md border border-white/20"
+      >
+        <h2 className="text-3xl font-bold mb-6 text-center">Create Account</h2>
+        <p className="text-center text-gray-300 mb-8">Join Lung Cancer AI Platform</p>
+
+        <form onSubmit={handleSignup} className="space-y-5">
+          <div>
+            <label className="block mb-1">Full Name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full p-3 rounded-lg bg-white/20 text-white outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block mb-1">Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full p-3 rounded-lg bg-white/20 text-white outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block mb-1">Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full p-3 rounded-lg bg-white/20 text-white outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="w-full py-3 mt-4 bg-green-600 hover:bg-green-700 rounded-lg font-semibold"
+          >
+            Sign Up
+          </button>
+        </form>
+
+        <p className="mt-6 text-center text-gray-300">
+          Already have an account?{" "}
+          <Link to="/login" className="text-blue-400 hover:underline">
+            Login
+          </Link>
+        </p>
+      </motion.div>
     </div>
   );
 }

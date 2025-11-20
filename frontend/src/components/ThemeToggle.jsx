@@ -1,16 +1,32 @@
-import { useContext } from "react";
-import { ThemeContext } from "../context/ThemeContext";
+import { useEffect, useState } from "react";
 
 export default function ThemeToggle() {
-  const { theme, toggleTheme } = useContext(ThemeContext);
+  const [mode, setMode] = useState(() => {
+    try {
+      return localStorage.getItem("theme") || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    } catch {
+      return 'light';
+    }
+  });
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (mode === "dark") {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
+    try { localStorage.setItem("theme", mode); } catch {}
+  }, [mode]);
 
   return (
     <button
-      onClick={toggleTheme}
-      className="fixed bottom-6 right-6 p-3 rounded-full shadow-lg
-                 bg-gray-200 dark:bg-gray-700 dark:text-white transition"
+      onClick={() => setMode(mode === "dark" ? "light" : "dark")}
+      aria-label="Toggle theme"
+      className="p-2 rounded-md border dark:border-slate-700"
+      title="Toggle theme"
     >
-      {theme === "light" ? "🌙" : "☀️"}
+      {mode === "dark" ? "🌙" : "☀️"}
     </button>
   );
 }

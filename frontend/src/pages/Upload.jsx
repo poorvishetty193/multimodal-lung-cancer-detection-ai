@@ -1,40 +1,41 @@
-import { useState } from "react";
-import UploadCT from "../components/UploadCT";
-import UploadAudio from "../components/UploadAudio";
-import PatientForm from "../components/PatientForm";
-import { uploadData } from "../api/backend";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from "react";
 
 export default function Upload() {
-  const [ct, setCT] = useState(null);
+  const [ctZip, setCtZip] = useState(null);
   const [audio, setAudio] = useState(null);
-  const [metadata, setMetadata] = useState({});
-  const navigate = useNavigate();
+  const [age, setAge] = useState("");
+  const [sex, setSex] = useState("");
 
-  const handleUpload = async () => {
-    const formData = new FormData();
-    formData.append("ct_zip", ct);
-    formData.append("audio", audio);
-    formData.append("metadata", JSON.stringify(metadata));
-
-    const res = await uploadData(formData);
-    navigate(`/results/${res.data.id}`);
-  };
+  function handleSubmit(e) {
+    e.preventDefault();
+    // TODO: send multipart to backend (axios)
+    alert("Uploaded (stub). Implement backend integration.");
+  }
 
   return (
-    <div className="p-6 max-w-xl mx-auto">
-      <h2 className="text-2xl font-bold mb-4">Upload Patient Data</h2>
+    <div className="page container">
+      <h2>Upload CT & Audio</h2>
+      <form className="form card" onSubmit={handleSubmit}>
+        <label>CT folder (zip)</label>
+        <input type="file" accept=".zip" onChange={(e) => setCtZip(e.target.files[0])} />
 
-      <UploadCT setCT={setCT} />
-      <UploadAudio setAudio={setAudio} />
-      <PatientForm metadata={metadata} setMetadata={setMetadata} />
+        <label>Audio (.wav)</label>
+        <input type="file" accept=".wav" onChange={(e) => setAudio(e.target.files[0])} />
 
-      <button
-        onClick={handleUpload}
-        className="mt-6 bg-green-600 text-white px-6 py-3 rounded-lg w-full"
-      >
-        Run Analysis
-      </button>
+        <label>Age</label>
+        <input type="number" value={age} onChange={(e) => setAge(e.target.value)} />
+
+        <label>Sex</label>
+        <select value={sex} onChange={(e) => setSex(e.target.value)}>
+          <option value="">Select</option>
+          <option value="female">Female</option>
+          <option value="male">Male</option>
+        </select>
+
+        <div className="row">
+          <button className="btn-primary" type="submit">Run Analysis</button>
+        </div>
+      </form>
     </div>
   );
 }

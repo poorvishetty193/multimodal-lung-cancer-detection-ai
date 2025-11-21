@@ -1,41 +1,91 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Home from "./pages/Home";
-import Upload from "./pages/Upload";
-import Patients from "./pages/Patients";
-import Results from "./pages/Results";
+import React from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+
 import Intro from "./pages/Intro";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
-import NavBar from "./components/NavBar";
-import { useEffect, useState } from "react";
+import UserDashboard from "./pages/UserDashboard";
+import AdminDashboard from "./pages/AdminDashboard";
+import Upload from "./pages/Upload";
+import Patients from "./pages/Patients";
+import Results from "./pages/Results";
+
+import Navbar from "./components/Navbar";
+import { useAuth } from "./auth/AuthContext";
+
+/**
+ * RequireAuth component - wraps protected routes
+ */
+function RequireAuth({ children, allowedRoles }) {
+  const { user } = useAuth();
+  if (!user) return <Navigate to="/login" replace />;
+  if (allowedRoles && !allowedRoles.includes(user.role)) return <Navigate to="/" replace />;
+  return children;
+}
 
 export default function App() {
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    // load user if token exists (you might call /auth/me)
-    const token = localStorage.getItem("auth_token");
-    if (token) {
-      // for now simple placeholder: we store minimal user in localStorage if you want
-      const u = JSON.parse(localStorage.getItem("auth_user") || "null");
-      setUser(u);
-    }
-  }, []);
+  const { user } = useAuth();
 
   return (
-    <BrowserRouter>
-      <NavBar user={user} setUser={setUser} />
-      <div className="mt-6">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/intro" element={<Intro />} />
-          <Route path="/upload" element={<Upload />} />
-          <Route path="/patients" element={<Patients />} />
-          <Route path="/results/:id" element={<Results />} />
-          <Route path="/login" element={<Login setUser={setUser} />} />
-          <Route path="/signup" element={<Signup />} />
-        </Routes>
-      </div>
-    </BrowserRouter>
+    <div className={user ? "app logged-in" : "app logged-out"}>
+      {/* Navbar only when logged in */}
+      {user && <Navbar />}
+
+      <Routes>
+        {/* public */}
+        <Route path="/" element={<Intro />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+
+        {/* protected - user */}
+        <Route
+          path="/dashboard"
+          element={
+            <RequireAuth allowedRoles={["user", "doctor"]}>
+              <UserDashboard />
+            </RequireAuth>
+          }
+        />
+
+        {/* protected - admin */}
+        <Route
+          path="/admin"
+          element={
+            <RequireAuth allowedRoles={["admin"]}>
+              <AdminDashboard />
+            </RequireAuth>
+          }
+        />
+
+        {/* shared protected */}
+        <Route
+          path="/upload"
+          element={
+            <RequireAuth allowedRoles={["user", "doctor", "admin"]}>
+              <Upload />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/patients"
+          element={
+            <RequireAuth allowedRoles={["doctor", "admin"]}>
+              <Patients />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/results/:id"
+          element={
+            <RequireAuth allowedRoles={["user", "doctor", "admin"]}>
+              <Results />
+            </RequireAuth>
+          }
+        />
+
+        {/* fallback */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </div>
   );
 }

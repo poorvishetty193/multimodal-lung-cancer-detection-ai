@@ -1,64 +1,46 @@
 import React, { useState } from "react";
-import AuthLayout from "./AuthLayout";
 import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "../auth/AuthContext";
+import { motion } from "framer-motion";
 
-export default function Login({ setUser }) {
-  const navigate = useNavigate();
+export default function Login() {
+  const { login } = useAuth();
+  const nav = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState("user");
 
-  const loginForm = (
-    <>
-      <div className="input-box animation" style={{ ["--D"]: 1, ["--S"]: 22 }}>
-        <input
-          type="email"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <label>Email</label>
-      </div>
+  function submit(e) {
+    e.preventDefault();
+    login({ email, password, role });
+    // redirect depending on role
+    if (role === "admin") nav("/admin");
+    else nav("/dashboard");
+  }
 
-      <div className="input-box animation" style={{ ["--D"]: 2, ["--S"]: 23 }}>
-        <input
-          type="password"
-          required
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        <label>Password</label>
-      </div>
+  return (
+    <div className="auth-page">
+      <motion.div className="auth-card glass" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+        <div className="auth-left">
+          <h2>Sign In</h2>
+          <form onSubmit={submit} className="auth-form">
+            <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" required />
+            <input value={password} type="password" onChange={(e) => setPassword(e.target.value)} placeholder="Password" required />
+            <select value={role} onChange={(e) => setRole(e.target.value)}>
+              <option value="user">Patient / User</option>
+              <option value="doctor">Doctor</option>
+              <option value="admin">Admin</option>
+            </select>
+            <button className="btn-primary" type="submit">Sign In</button>
+          </form>
+          <p className="muted">Don't have an account? <Link to="/signup">Sign up</Link></p>
+        </div>
 
-      <div className="input-box animation" style={{ ["--D"]: 3, ["--S"]: 24 }}>
-        <button
-          type="submit"
-          className="btn"
-          onClick={async (e) => {
-            e.preventDefault();
-            try {
-              const res = await fetch("http://127.0.0.1:8000/auth/login", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email, password }),
-              });
-              const data = await res.json();
-              if (!res.ok) throw new Error(data.detail || "Login failed");
-              localStorage.setItem("auth_token", data.token || "dummy-token");
-              localStorage.setItem("auth_user", JSON.stringify(data.user || { email }));
-              navigate("/");
-            } catch (err) {
-              alert(err.message || "Login error");
-            }
-          }}
-        >
-          Login
-        </button>
-      </div>
-
-      <div className="regi-link animation" style={{ ["--D"]: 4, ["--S"]: 25 }}>
-        <p>
-          Don't have an account? <br />
-          <Link to="/signup" className="SignUpLink">Sign Up</Link>
-
-  return <AuthLayout children={{ loginForm }} />;
+        <div className="auth-right">
+          <div className="welcome">Hello, Friend!</div>
+          <p className="muted">Register with your details to access all features.</p>
+        </div>
+      </motion.div>
+    </div>
+  );
 }

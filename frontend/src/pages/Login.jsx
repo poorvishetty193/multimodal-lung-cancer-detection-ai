@@ -1,65 +1,64 @@
 import React, { useState } from "react";
-import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import AuthLayout from "./AuthLayout";
+import { useNavigate, Link } from "react-router-dom";
 
-export default function Login() {
+export default function Login({ setUser }) {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleLogin = (e) => {
-    e.preventDefault();
-    console.log("Logging in with:", email, password);
-  };
+  const loginForm = (
+    <>
+      <div className="input-box animation" style={{ ["--D"]: 1, ["--S"]: 22 }}>
+        <input
+          type="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        <label>Email</label>
+      </div>
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 to-gray-700 text-white p-6">
-      <motion.div
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="bg-white/10 backdrop-blur-lg p-10 rounded-2xl shadow-xl w-full max-w-md border border-white/20"
-      >
-        <h2 className="text-3xl font-bold mb-6 text-center">Welcome Back</h2>
-        <p className="text-center text-gray-300 mb-8">Login to continue</p>
+      <div className="input-box animation" style={{ ["--D"]: 2, ["--S"]: 23 }}>
+        <input
+          type="password"
+          required
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+        <label>Password</label>
+      </div>
 
-        <form onSubmit={handleLogin} className="space-y-5">
-          <div>
-            <label className="block mb-1">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full p-3 rounded-lg bg-white/20 text-white outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
+      <div className="input-box animation" style={{ ["--D"]: 3, ["--S"]: 24 }}>
+        <button
+          type="submit"
+          className="btn"
+          onClick={async (e) => {
+            e.preventDefault();
+            try {
+              const res = await fetch("http://127.0.0.1:8000/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password }),
+              });
+              const data = await res.json();
+              if (!res.ok) throw new Error(data.detail || "Login failed");
+              localStorage.setItem("auth_token", data.token || "dummy-token");
+              localStorage.setItem("auth_user", JSON.stringify(data.user || { email }));
+              navigate("/");
+            } catch (err) {
+              alert(err.message || "Login error");
+            }
+          }}
+        >
+          Login
+        </button>
+      </div>
 
-          <div>
-            <label className="block mb-1">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-3 rounded-lg bg-white/20 text-white outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
+      <div className="regi-link animation" style={{ ["--D"]: 4, ["--S"]: 25 }}>
+        <p>
+          Don't have an account? <br />
+          <Link to="/signup" className="SignUpLink">Sign Up</Link>
 
-          <button
-            type="submit"
-            className="w-full py-3 mt-4 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold"
-          >
-            Login
-          </button>
-        </form>
-
-        <p className="mt-6 text-center text-gray-300">
-          Don't have an account?{" "}
-          <Link to="/signup" className="text-blue-400 hover:underline">
-            Sign Up
-          </Link>
-        </p>
-      </motion.div>
-    </div>
-  );
+  return <AuthLayout children={{ loginForm }} />;
 }

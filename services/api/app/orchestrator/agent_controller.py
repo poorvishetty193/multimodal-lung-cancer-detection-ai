@@ -1,6 +1,6 @@
 import requests
 from core.config import settings
-from a2a_protocol import make_message
+from orchestrator.a2a_protocol import make_message
 from core.logger import logger
 import time, json
 

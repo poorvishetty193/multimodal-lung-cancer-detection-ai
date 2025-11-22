@@ -1,5 +1,5 @@
 import os
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     MINIO_ENDPOINT: str = os.getenv("MINIO_ENDPOINT", "minio:9000")

@@ -1,3 +1,7 @@
-flask==2.4.0
-numpy==1.26.2
-pydicom==2.3.1
+numpy
+pydicom
+scikit-image
+torch==2.2.2+cpu
+--extra-index-url https://download.pytorch.org/whl/cpu
+fastapi
+uvicorn

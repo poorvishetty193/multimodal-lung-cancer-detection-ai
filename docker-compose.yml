@@ -1,7 +1,10 @@
 version: '3.8'
+
 services:
   api:
-    build: ./services/api
+    build:
+      context: ./services/api
+      dockerfile: Dockerfile
     container_name: lc_api
     ports:
       - "8000:8000"
@@ -14,16 +17,26 @@ services:
       - CELERY_BACKEND=redis://redis:6379/0
       - DATABASE_URL=postgresql://postgres:example@postgres:5432/lcdb
       - REDIS_URL=redis://redis:6379/1
+      - ML_CT_URL=http://ml_ct:8101/predict
+      - ML_AUDIO_URL=http://ml_audio:8102/predict
+      - ML_META_URL=http://ml_meta:8103/predict
+      - ML_FUSION_URL=http://ml_fusion:8104/predict
     depends_on:
       - rabbitmq
       - redis
       - minio
       - postgres
+      - ml_ct
+      - ml_audio
+      - ml_meta
+      - ml_fusion
     volumes:
       - ./services/api/app:/app
 
   worker:
-    build: ./services/worker
+    build:
+      context: ./services/worker
+      dockerfile: Dockerfile
     container_name: lc_worker
     environment:
       - CELERY_BROKER=amqp://guest:guest@rabbitmq:5672//
@@ -34,16 +47,25 @@ services:
       - STORAGE_BUCKET=uploads
       - DATABASE_URL=postgresql://postgres:example@postgres:5432/lcdb
       - REDIS_URL=redis://redis:6379/1
+      - ML_CT_URL=http://ml_ct:8101/predict
+      - ML_AUDIO_URL=http://ml_audio:8102/predict
+      - ML_META_URL=http://ml_meta:8103/predict
+      - ML_FUSION_URL=http://ml_fusion:8104/predict
     depends_on:
-      - api
       - rabbitmq
       - redis
       - minio
+      - ml_ct
+      - ml_audio
+      - ml_meta
+      - ml_fusion
     volumes:
       - ./services/worker:/app
 
   ml_ct:
-    build: ./services/ml_service_ct
+    build:
+      context: ./services/ml_service_ct
+      dockerfile: Dockerfile
     container_name: lc_ml_ct
     environment:
       - PORT=8101
@@ -53,7 +75,9 @@ services:
       - ./services/ml_service_ct/service:/app/service
 
   ml_audio:
-    build: ./services/ml_service_audio
+    build:
+      context: ./services/ml_service_audio
+      dockerfile: Dockerfile
     container_name: lc_ml_audio
     environment:
       - PORT=8102
@@ -63,7 +87,9 @@ services:
       - ./services/ml_service_audio/service:/app/service
 
   ml_meta:
-    build: ./services/ml_service_metadata
+    build:
+      context: ./services/ml_service_metadata
+      dockerfile: Dockerfile
     container_name: lc_ml_meta
     environment:
       - PORT=8103
@@ -73,7 +99,9 @@ services:
       - ./services/ml_service_metadata/service:/app/service
 
   ml_fusion:
-    build: ./services/ml_service_fusion
+    build:
+      context: ./services/ml_service_fusion
+      dockerfile: Dockerfile
     container_name: lc_ml_fusion
     environment:
       - PORT=8104

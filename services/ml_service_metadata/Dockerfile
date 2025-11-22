@@ -4,4 +4,5 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY service/ /app/service
 EXPOSE 8103
-CMD ["python", "service/predict_meta.py"]
+CMD ["uvicorn", "service.predict_meta:app", "--host", "0.0.0.0", "--port", "8103"]
+

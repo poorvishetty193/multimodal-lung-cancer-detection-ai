@@ -1,0 +1,13 @@
+fastapi==0.95.2
+uvicorn[standard]==0.22.0
+minio==7.1.1
+pydantic==1.10.7
+python-multipart==0.0.6
+requests==2.31.0
+sqlalchemy==1.4.49
+asyncpg==0.27.0
+alembic==1.11.1
+redis==4.5.5
+boto3==1.31.8
+python-dotenv==1.0.0
+loguru==0.7.0

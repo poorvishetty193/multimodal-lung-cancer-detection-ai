@@ -1,0 +1,126 @@
+version: '3.8'
+services:
+  api:
+    build: ./services/api
+    container_name: lc_api
+    ports:
+      - "8000:8000"
+    environment:
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=minio
+      - MINIO_SECRET_KEY=minio123
+      - STORAGE_BUCKET=uploads
+      - CELERY_BROKER=amqp://guest:guest@rabbitmq:5672//
+      - CELERY_BACKEND=redis://redis:6379/0
+      - DATABASE_URL=postgresql://postgres:example@postgres:5432/lcdb
+      - REDIS_URL=redis://redis:6379/1
+    depends_on:
+      - rabbitmq
+      - redis
+      - minio
+      - postgres
+    volumes:
+      - ./services/api/app:/app
+
+  worker:
+    build: ./services/worker
+    container_name: lc_worker
+    environment:
+      - CELERY_BROKER=amqp://guest:guest@rabbitmq:5672//
+      - CELERY_BACKEND=redis://redis:6379/0
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=minio
+      - MINIO_SECRET_KEY=minio123
+      - STORAGE_BUCKET=uploads
+      - DATABASE_URL=postgresql://postgres:example@postgres:5432/lcdb
+      - REDIS_URL=redis://redis:6379/1
+    depends_on:
+      - api
+      - rabbitmq
+      - redis
+      - minio
+    volumes:
+      - ./services/worker:/app
+
+  ml_ct:
+    build: ./services/ml_service_ct
+    container_name: lc_ml_ct
+    environment:
+      - PORT=8101
+    ports:
+      - "8101:8101"
+    volumes:
+      - ./services/ml_service_ct/service:/app/service
+
+  ml_audio:
+    build: ./services/ml_service_audio
+    container_name: lc_ml_audio
+    environment:
+      - PORT=8102
+    ports:
+      - "8102:8102"
+    volumes:
+      - ./services/ml_service_audio/service:/app/service
+
+  ml_meta:
+    build: ./services/ml_service_metadata
+    container_name: lc_ml_meta
+    environment:
+      - PORT=8103
+    ports:
+      - "8103:8103"
+    volumes:
+      - ./services/ml_service_metadata/service:/app/service
+
+  ml_fusion:
+    build: ./services/ml_service_fusion
+    container_name: lc_ml_fusion
+    environment:
+      - PORT=8104
+    ports:
+      - "8104:8104"
+    volumes:
+      - ./services/ml_service_fusion/service:/app/service
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: lc_rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+
+  redis:
+    image: redis:7
+    container_name: lc_redis
+    ports:
+      - "6379:6379"
+
+  minio:
+    image: minio/minio:latest
+    command: server /data
+    container_name: lc_minio
+    ports:
+      - "9000:9000"
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio123
+    volumes:
+      - minio_data:/data
+
+  postgres:
+    image: postgres:15
+    container_name: lc_postgres
+    environment:
+      POSTGRES_PASSWORD: example
+      POSTGRES_DB: lcdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  minio_data:
+  pgdata:

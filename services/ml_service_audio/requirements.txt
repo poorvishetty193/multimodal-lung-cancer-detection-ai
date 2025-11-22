@@ -1,7 +1,7 @@
 numpy
 librosa
 soundfile
-torch==2.2.2+cpu
+torch==2.1.0+cpu
 --extra-index-url https://download.pytorch.org/whl/cpu
 fastapi
 uvicorn

@@ -60,11 +60,11 @@ export default function Results({ results, onBack }){
           <h3 className="font-semibold mb-2">Audio & Metadata</h3>
           <div className="mb-2">
             <div className="text-sm mb-1 font-medium">Audio probs</div>
-            {audio.audio_probs ? Object.entries(audio.audio_probs).map(([k,v]) => <div key={k} className="text-xs">{k}: {(v*100).toFixed(1)}%</div>) : <div className="text-sm text-gray-500">No audio</div>}
+            {audio.audio_probs && Object.keys(audio.audio_probs).length > 0 ? Object.entries(audio.audio_probs).map(([k,v]) => <div key={k} className="text-xs">{k}: {(v*100).toFixed(1)}%</div>) : <div className="text-sm text-gray-500">No audio</div>}
           </div>
           <div>
             <div className="text-sm mb-1 font-medium">Metadata probs</div>
-            {meta.metadata_probs ? Object.entries(meta.metadata_probs).map(([k,v]) => <div key={k} className="text-xs">{k}: {(v*100).toFixed(1)}%</div>) : <div className="text-sm text-gray-500">No metadata</div>}
+            {meta.metadata_probs && Object.keys(meta.metadata_probs).length > 0 ? Object.entries(meta.metadata_probs).map(([k,v]) => <div key={k} className="text-xs">{k}: {(v*100).toFixed(1)}%</div>) : <div className="text-sm text-gray-500">No metadata</div>}
           </div>
         </div>
       </div>

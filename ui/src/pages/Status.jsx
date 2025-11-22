@@ -19,11 +19,8 @@ export default function Status({ jobId, onComplete }) {
         setProgress(Number(data.progress || 0));
 
         if (data.status === "completed") {
-          const resultData = await getJobResults(jobId);
-
-          // FIXED: extract results correctly
-          const cleanResults =
-            resultData.results ? resultData.results : resultData;
+          // Use results directly from getJob API response
+          const cleanResults = data.results ? data.results : {};
 
           setPolling(false);
           onComplete(cleanResults);
@@ -35,7 +32,19 @@ export default function Status({ jobId, onComplete }) {
         }
       } catch (err) {
         console.error(err);
-        setError("Could not fetch job status");
+        // Handle 404 as no results yet, call onComplete with empty results and clear error
+        if (err.response && err.response.status === 404) {
+          setError(null);
+          setStatus("not found");
+          setPolling(false);
+          onComplete({});
+        } else if (err.response && err.response.status) {
+          setError(`Error ${err.response.status}: ${err.response.statusText}`);
+        } else if (err.message) {
+          setError(`Error: ${err.message}`);
+        } else {
+          setError("Could not fetch job status");
+        }
       }
     }
 

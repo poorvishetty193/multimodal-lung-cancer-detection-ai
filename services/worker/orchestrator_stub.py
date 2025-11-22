@@ -29,19 +29,25 @@ class AgentControllerStub:
 
         try:
             r_audio = requests.post(self.audio_url, json={"job_id": job_id, "audio_object": storage_objects.get("audio"), "metadata": metadata}, timeout=120)
-            results['audio'] = r_audio.json()
+            audio_res = r_audio.json()
+            if 'audio_probs' not in audio_res:
+                audio_res['audio_probs'] = {}
+            results['audio'] = audio_res
         except Exception as e:
             logger.exception("Audio failed")
-            results['audio'] = {"error": str(e)}
+            results['audio'] = {"error": str(e), "audio_probs": {}}
         if redis_client and job_key:
             redis_client.hset(job_key, "progress", "65.0")
 
         try:
             r_meta = requests.post(self.meta_url, json={"job_id": job_id, "metadata": metadata}, timeout=30)
-            results['metadata'] = r_meta.json()
+            meta_res = r_meta.json()
+            if 'metadata_probs' not in meta_res:
+                meta_res['metadata_probs'] = {}
+            results['metadata'] = meta_res
         except Exception as e:
             logger.exception("Meta failed")
-            results['metadata'] = {"error": str(e)}
+            results['metadata'] = {"error": str(e), "metadata_probs": {}}
         if redis_client and job_key:
             redis_client.hset(job_key, "progress", "80.0")
 

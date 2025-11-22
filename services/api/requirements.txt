@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+pydantic==2.7.0
+pydantic-settings==2.2.1
+python-dotenv
+requests
+redis
+minio
+loguru
+python-multipart

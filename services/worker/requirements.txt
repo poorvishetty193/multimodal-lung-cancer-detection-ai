@@ -1,0 +1,5 @@
+redis==5.0.1
+loguru==0.7.2
+minio==7.2.7
+requests==2.31.0
+python-dotenv==1.0.1

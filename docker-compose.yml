@@ -8,19 +8,19 @@ services:
     container_name: lc_api
     ports:
       - "8000:8000"
+    env_file:
+      - .env
     environment:
-      - MINIO_ENDPOINT=minio:9000
-      - MINIO_ACCESS_KEY=minio
-      - MINIO_SECRET_KEY=minio123
-      - STORAGE_BUCKET=uploads
-      - CELERY_BROKER=amqp://guest:guest@rabbitmq:5672//
-      - CELERY_BACKEND=redis://redis:6379/0
-      - DATABASE_URL=postgresql://postgres:example@postgres:5432/lcdb
-      - REDIS_URL=redis://redis:6379/1
-      - ML_CT_URL=http://ml_ct:8101/predict
-      - ML_AUDIO_URL=http://ml_audio:8102/predict
-      - ML_META_URL=http://ml_meta:8103/predict
-      - ML_FUSION_URL=http://ml_fusion:8104/predict
+      MINIO_ENDPOINT: minio:9000
+      STORAGE_BUCKET: uploads
+      CELERY_BROKER: amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672//
+      CELERY_BACKEND: redis://redis:6379/0
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://redis:6379/1
+      ML_CT_URL: http://ml_ct:8101/predict
+      ML_AUDIO_URL: http://ml_audio:8102/predict
+      ML_META_URL: http://ml_meta:8103/predict
+      ML_FUSION_URL: http://ml_fusion:8104/predict
     depends_on:
       - rabbitmq
       - redis
@@ -38,19 +38,19 @@ services:
       context: ./services/worker
       dockerfile: Dockerfile
     container_name: lc_worker
+    env_file:
+      - .env
     environment:
-      - CELERY_BROKER=amqp://guest:guest@rabbitmq:5672//
-      - CELERY_BACKEND=redis://redis:6379/0
-      - MINIO_ENDPOINT=minio:9000
-      - MINIO_ACCESS_KEY=minio
-      - MINIO_SECRET_KEY=minio123
-      - STORAGE_BUCKET=uploads
-      - DATABASE_URL=postgresql://postgres:example@postgres:5432/lcdb
-      - REDIS_URL=redis://redis:6379/1
-      - ML_CT_URL=http://ml_ct:8101/predict
-      - ML_AUDIO_URL=http://ml_audio:8102/predict
-      - ML_META_URL=http://ml_meta:8103/predict
-      - ML_FUSION_URL=http://ml_fusion:8104/predict
+      MINIO_ENDPOINT: minio:9000
+      STORAGE_BUCKET: uploads
+      CELERY_BROKER: amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672//
+      CELERY_BACKEND: redis://redis:6379/0
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://redis:6379/1
+      ML_CT_URL: http://ml_ct:8101/predict
+      ML_AUDIO_URL: http://ml_audio:8102/predict
+      ML_META_URL: http://ml_meta:8103/predict
+      ML_FUSION_URL: http://ml_fusion:8104/predict
     depends_on:
       - rabbitmq
       - redis
@@ -68,7 +68,7 @@ services:
       dockerfile: Dockerfile
     container_name: lc_ml_ct
     environment:
-      - PORT=8101
+      PORT: 8101
     ports:
       - "8101:8101"
     volumes:
@@ -80,7 +80,7 @@ services:
       dockerfile: Dockerfile
     container_name: lc_ml_audio
     environment:
-      - PORT=8102
+      PORT: 8102
     ports:
       - "8102:8102"
     volumes:
@@ -92,7 +92,7 @@ services:
       dockerfile: Dockerfile
     container_name: lc_ml_meta
     environment:
-      - PORT=8103
+      PORT: 8103
     ports:
       - "8103:8103"
     volumes:
@@ -104,7 +104,7 @@ services:
       dockerfile: Dockerfile
     container_name: lc_ml_fusion
     environment:
-      - PORT=8104
+      PORT: 8104
     ports:
       - "8104:8104"
     volumes:
@@ -116,9 +116,11 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
+    env_file:
+      - .env
     environment:
-      - RABBITMQ_DEFAULT_USER=guest
-      - RABBITMQ_DEFAULT_PASS=guest
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
 
   redis:
     image: redis:7
@@ -128,22 +130,28 @@ services:
 
   minio:
     image: minio/minio:latest
-    command: server /data
+    command: server /data --console-address ":9001"
     container_name: lc_minio
     ports:
       - "9000:9000"
+      - "9001:9001"
+    env_file:
+      - .env
     environment:
-      MINIO_ROOT_USER: minio
-      MINIO_ROOT_PASSWORD: minio123
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     volumes:
       - minio_data:/data
 
   postgres:
     image: postgres:15
     container_name: lc_postgres
+    env_file:
+      - .env
     environment:
-      POSTGRES_PASSWORD: example
-      POSTGRES_DB: lcdb
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
     ports:
       - "5432:5432"
     volumes:

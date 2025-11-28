@@ -1,65 +1,143 @@
-import React, { useState } from 'react'
-import FileInput from '../components/FileInput'
-import { submitScan } from '../api'
+import React, { useState } from "react";
+import FileInput from "../components/FileInput";
+import { submitScan } from "../api";
 
-export default function Upload({ onJobCreated }){
-  const [ctFile, setCtFile] = useState(null)
-  const [audioFile, setAudioFile] = useState(null)
-  const [age, setAge] = useState(50)
-  const [packYears, setPackYears] = useState(0)
-  const [symptoms, setSymptoms] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
+export default function Upload({ onJobCreated }) {
+  const [ctFile, setCtFile] = useState(null);
+  const [audioFile, setAudioFile] = useState(null);
 
-  async function handleSubmit(e){
-    e.preventDefault()
-    setError(null)
-    setLoading(true)
+  const [age, setAge] = useState("");
+  const [packYears, setPackYears] = useState("");
+  const [symptoms, setSymptoms] = useState("");
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // -------------------------------
+  //       SUBMIT HANDLER
+  // -------------------------------
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setError(null);
+
+    // -------------------------------
+    // VALIDATION
+    // -------------------------------
+    if (!ctFile) {
+      setError("Please upload a CT file OR an image file (PNG/JPG/JPEG/ZIP).");
+      return;
+    }
+
+    setLoading(true);
+
     try {
-      const metadata = { age: Number(age), smoking_history_pack_years: Number(packYears), symptoms }
-      const resp = await submitScan({ ctFile, audioFile, metadata })
-      onJobCreated(resp.job_id)
-    } catch (err){
-      console.error(err)
-      setError(err?.response?.data?.detail || err.message || 'Upload failed')
+      const metadata = {
+        age: age ? Number(age) : null,
+        smoking_history_pack_years: packYears ? Number(packYears) : null,
+        symptoms: symptoms || "",
+      };
+
+      const resp = await submitScan({
+        ctFile,
+        audioFile, // optional
+        metadata,
+      });
+
+      onJobCreated(resp.job_id);
+    } catch (err) {
+      console.error(err);
+      setError(
+        err?.response?.data?.detail ||
+          err.message ||
+          "Upload failed. Please try again."
+      );
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
+  // -------------------------------
+  //       RENDER
+  // -------------------------------
   return (
     <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-      <h2 className="text-xl font-semibold mb-4">Upload scan</h2>
+      <h2 className="text-xl font-semibold mb-4">Upload Scan</h2>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <FileInput label="CT archive (zip/dicom-zip)" accept=".zip,application/zip" onFile={setCtFile} />
-        <FileInput label="Audio (wav/mp3/m4a) — optional" accept="audio/*" onFile={setAudioFile} />
+      <form onSubmit={handleSubmit} className="space-y-5">
+        
+        {/* CT or Image File */}
+        <FileInput
+          label="CT / Image (PNG, JPG, JPEG, ZIP, DICOM-zip)"
+          accept=".zip,application/zip,image/png,image/jpeg"
+          onFile={setCtFile}
+        />
 
+        {/* Optional Audio */}
+        <FileInput
+          label="Audio (WAV / MP3 / M4A) — Optional"
+          accept="audio/*"
+          onFile={setAudioFile}
+        />
+
+        {/* Metadata */}
         <div className="grid grid-cols-2 gap-3">
+          {/* Age */}
           <div>
             <label className="block text-sm mb-1">Age</label>
-            <input type="number" value={age} onChange={e=>setAge(e.target.value)} className="w-full rounded border px-3 py-2 bg-gray-50 dark:bg-gray-700" />
+            <input
+              type="number"
+              value={age}
+              onChange={(e) => setAge(e.target.value)}
+              className="w-full rounded border px-3 py-2 bg-gray-50 dark:bg-gray-700"
+              placeholder="e.g., 45"
+            />
           </div>
+
+          {/* Smoking Pack Years */}
           <div>
-            <label className="block text-sm mb-1">Smoking pack-years</label>
-            <input type="number" value={packYears} onChange={e=>setPackYears(e.target.value)} className="w-full rounded border px-3 py-2 bg-gray-50 dark:bg-gray-700" />
+            <label className="block text-sm mb-1">Smoking Pack-Years</label>
+            <input
+              type="number"
+              value={packYears}
+              onChange={(e) => setPackYears(e.target.value)}
+              className="w-full rounded border px-3 py-2 bg-gray-50 dark:bg-gray-700"
+              placeholder="e.g., 10"
+            />
           </div>
         </div>
 
+        {/* Symptoms */}
         <div>
-          <label className="block text-sm mb-1">Symptoms (free text)</label>
-          <input value={symptoms} onChange={e=>setSymptoms(e.target.value)} className="w-full rounded border px-3 py-2 bg-gray-50 dark:bg-gray-700" />
+          <label className="block text-sm mb-1">Symptoms (optional)</label>
+          <input
+            value={symptoms}
+            onChange={(e) => setSymptoms(e.target.value)}
+            className="w-full rounded border px-3 py-2 bg-gray-50 dark:bg-gray-700"
+            placeholder="e.g., chronic cough"
+          />
         </div>
 
-        {error && <div className="text-sm text-red-500">{JSON.stringify(error)}</div>}
+        {/* Error Message */}
+        {error && (
+          <div className="text-sm text-red-500">
+            {typeof error === "string" ? error : JSON.stringify(error)}
+          </div>
+        )}
 
+        {/* Submit Button */}
         <div className="flex items-center gap-3">
-          <button disabled={loading} className="px-4 py-2 bg-indigo-600 text-white rounded">
-            {loading ? 'Uploading...' : 'Submit Scan'}
+          <button
+            disabled={loading}
+            className="px-4 py-2 bg-indigo-600 text-white rounded disabled:opacity-50"
+          >
+            {loading ? "Uploading..." : "Submit Scan"}
           </button>
-          <div className="text-sm text-gray-500">After submit, the worker will process the job. You will get a Job ID to poll.</div>
+
+          <div className="text-sm text-gray-500">
+            After submission, the worker will process the job.
+          </div>
         </div>
       </form>
     </section>
-  )
+  );
 }

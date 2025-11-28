@@ -1,17 +1,34 @@
 import os
-import sys
+import logging
 import requests
 
-# === FIX FOR PYLANCE IMPORT ERRORS ===
-API_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../api/app"))
-if API_PATH not in sys.path:
-    sys.path.append(API_PATH)
+# ---------------------------------
+# Simple local logger
+# ---------------------------------
+logger = logging.getLogger("worker_agent")
+logger.setLevel(logging.INFO)
+handler = logging.StreamHandler()
+handler.setFormatter(logging.Formatter("[%(levelname)s] %(message)s"))
+logger.addHandler(handler)
 
-from core.logger import logger
-from core.config import settings
+# ---------------------------------
+# Load settings from environment
+# ---------------------------------
+class Settings:
+    ML_CT_URL = os.getenv("ML_CT_URL", "http://ml_ct:8101/predict")
+    ML_AUDIO_URL = os.getenv("ML_AUDIO_URL", "http://ml_audio:8102/predict")
+    ML_META_URL = os.getenv("ML_META_URL", "http://ml_meta:8103/predict")
+    ML_FUSION_URL = os.getenv("ML_FUSION_URL", "http://ml_fusion:8104/predict")
+
+settings = Settings()
 
 
 class AgentController:
+    """
+    Worker-side controller.
+    Calls each ML microservice and returns results.
+    No dependency on API source code.
+    """
 
     def __init__(self):
         self.ct_url = settings.ML_CT_URL
@@ -20,6 +37,7 @@ class AgentController:
         self.fusion_url = settings.ML_FUSION_URL
 
     def run_all(self, job_id, objects, metadata, redis_client=None, job_key=None):
+        logger.info(f"[Agent] Running job {job_id}")
         results = {}
 
         # ---- CT ----
@@ -56,9 +74,9 @@ class AgentController:
         try:
             payload = {
                 "job_id": job_id,
-                "ct": results["ct"],
-                "audio": results["audio"],
-                "metadata": results["metadata"],
+                "ct": results.get("ct"),
+                "audio": results.get("audio"),
+                "metadata": results.get("metadata"),
             }
             r = requests.post(self.fusion_url, json=payload, timeout=120)
             r.raise_for_status()
@@ -66,5 +84,5 @@ class AgentController:
         except Exception as e:
             results["fusion"] = {"error": str(e)}
 
-        logger.info(f"AgentController finished job {job_id}")
+        logger.info(f"[Agent] Completed job {job_id}")
         return results

@@ -13,18 +13,12 @@ export default function Upload({ onJobCreated }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // -------------------------------
-  //       SUBMIT HANDLER
-  // -------------------------------
   async function handleSubmit(e) {
     e.preventDefault();
     setError(null);
 
-    // -------------------------------
-    // VALIDATION
-    // -------------------------------
     if (!ctFile) {
-      setError("Please upload a CT file OR an image file (PNG/JPG/JPEG/ZIP).");
+      setError("Please upload a CT file or an image (PNG/JPG/ZIP).");
       return;
     }
 
@@ -37,10 +31,12 @@ export default function Upload({ onJobCreated }) {
         symptoms: symptoms || "",
       };
 
+      // smoking input field must match backend param name
       const resp = await submitScan({
         ctFile,
-        audioFile, // optional
+        audioFile,
         metadata,
+        smoking: packYears || "0", // IMPORTANT FIX
       });
 
       onJobCreated(resp.job_id);
@@ -48,27 +44,22 @@ export default function Upload({ onJobCreated }) {
       console.error(err);
       setError(
         err?.response?.data?.detail ||
-          err.message ||
-          "Upload failed. Please try again."
+        "Upload failed. Please try again."
       );
     } finally {
       setLoading(false);
     }
   }
 
-  // -------------------------------
-  //       RENDER
-  // -------------------------------
   return (
     <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
       <h2 className="text-xl font-semibold mb-4">Upload Scan</h2>
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        
-        {/* CT or Image File */}
+        {/* CT or Image */}
         <FileInput
           label="CT / Image (PNG, JPG, JPEG, ZIP, DICOM-zip)"
-          accept=".zip,application/zip,image/png,image/jpeg"
+          accept=".png,.jpg,.jpeg,.zip,application/zip,image/png,image/jpeg"
           onFile={setCtFile}
         />
 
@@ -79,9 +70,9 @@ export default function Upload({ onJobCreated }) {
           onFile={setAudioFile}
         />
 
-        {/* Metadata */}
+        {/* Age + Smoking */}
         <div className="grid grid-cols-2 gap-3">
-          {/* Age */}
+          
           <div>
             <label className="block text-sm mb-1">Age</label>
             <input
@@ -93,7 +84,6 @@ export default function Upload({ onJobCreated }) {
             />
           </div>
 
-          {/* Smoking Pack Years */}
           <div>
             <label className="block text-sm mb-1">Smoking Pack-Years</label>
             <input
@@ -104,6 +94,7 @@ export default function Upload({ onJobCreated }) {
               placeholder="e.g., 10"
             />
           </div>
+
         </div>
 
         {/* Symptoms */}
@@ -117,14 +108,8 @@ export default function Upload({ onJobCreated }) {
           />
         </div>
 
-        {/* Error Message */}
-        {error && (
-          <div className="text-sm text-red-500">
-            {typeof error === "string" ? error : JSON.stringify(error)}
-          </div>
-        )}
+        {error && <div className="text-sm text-red-500">{error}</div>}
 
-        {/* Submit Button */}
         <div className="flex items-center gap-3">
           <button
             disabled={loading}
@@ -134,7 +119,7 @@ export default function Upload({ onJobCreated }) {
           </button>
 
           <div className="text-sm text-gray-500">
-            After submission, the worker will process the job.
+            Your scan will be processed by the AI worker.
           </div>
         </div>
       </form>

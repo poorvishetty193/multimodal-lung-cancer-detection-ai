@@ -65,13 +65,8 @@ def process_job(job_id: str):
 
     # Execute orchestrator (runs CT, Audio, Meta, Fusion)
     try:
-        results = agent.run_all(
-            job_id=job_id,
-            objects=objects,
-            metadata=metadata,
-            redis_client=r,
-            job_key=key
-        )
+        results = agent.run_all(job_id, objects, metadata, redis_client=r, job_key=key)
+
     except Exception as e:
         logger.exception("❌ Error in AgentController.run_all")
         r.hset(key, "status", "failed")

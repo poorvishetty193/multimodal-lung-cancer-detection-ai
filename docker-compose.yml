@@ -162,6 +162,20 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  ml_image:
+    build:
+      context: ./services/ml_service_image
+      dockerfile: Dockerfile
+    container_name: lc_ml_image
+    environment:
+      - PORT=8105
+      - MINIO_ENDPOINT=minio:9000
+    ports:
+      - "8105:8105"
+    volumes:
+      - ./services/ml_service_image/service:/app/service
+
+
 volumes:
   minio_data:
   pgdata:

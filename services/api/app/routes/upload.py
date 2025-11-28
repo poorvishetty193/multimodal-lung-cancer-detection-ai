@@ -133,3 +133,68 @@ async def submit_scan(
     logger.info(f"Job created: {job_id} (CT={ct_path}, Audio={audio_path})")
 
     return {"job_id": job_id, "status": "queued"}
+
+@router.post("/submit", response_model=JobCreateResponse)
+async def submit_scan(
+    file: UploadFile = File(...),
+    audio_file: UploadFile = File(None),
+    metadata: str = Form(...),
+    smoking_pack_years: str = Form("0")
+):
+    job_id = str(uuid4())
+
+    try:
+        md = json.loads(metadata) if metadata else {}
+    except Exception:
+        raise HTTPException(status_code=400, detail="metadata must be valid JSON")
+
+    # normalize pack-years
+    try:
+        md["smoking_history_pack_years"] = float(smoking_pack_years or 0)
+    except:
+        md["smoking_history_pack_years"] = 0.0
+
+    filename = file.filename.lower()
+    mime = file.content_type or ""
+
+    # Determine file type
+    is_image = filename.endswith((".png", ".jpg", ".jpeg"))
+    is_ct = filename.endswith((".nii", ".nii.gz", ".zip", ".dcm"))
+
+    if not (is_image or is_ct):
+        raise HTTPException(status_code=400, detail="File must be CT or image (png/jpg)")
+
+    # Upload file
+    content = await file.read()
+    object_name = f"{job_id}/{file.filename}"
+    upload_bytes("uploads", object_name, content, content_type=mime)
+    logger.info(f"Uploaded file → uploads/{object_name}")
+
+    audio_obj = None
+    if audio_file:
+        audio_content = await audio_file.read()
+        audio_name = f"{job_id}/{audio_file.filename}"
+        upload_bytes("uploads", audio_name, audio_content, content_type=audio_file.content_type)
+        audio_obj = f"uploads/{audio_name}"
+
+    # Build objects map for worker
+    objects = {
+        "ct": f"uploads/{object_name}" if is_ct else None,
+        "image": f"uploads/{object_name}" if is_image else None,
+        "audio": audio_obj,
+    }
+
+    job_key = f"job:{job_id}"
+    r.hset(job_key, mapping={
+        "job_id": job_id,
+        "status": "queued",
+        "progress": "0.0",
+        "objects": json.dumps(objects),
+        "metadata": json.dumps(md),
+        "results": json.dumps({}),
+    })
+    r.expire(job_key, JOB_TTL)
+
+    r.lpush("job_queue", job_id)
+
+    return {"job_id": job_id, "status": "queued"}

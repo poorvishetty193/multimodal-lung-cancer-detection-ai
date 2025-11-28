@@ -1,31 +1,50 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-import time
 import random
+import time
 
 app = FastAPI()
 
-class CTModel(BaseModel):
-    nodules: list | None = None
-
-class AudioModel(BaseModel):
-    audio_probs: dict | None = None
-
-class MetadataModel(BaseModel):
-    metadata_probs: dict | None = None
-
+# ---------------------------------------------
+# Pydantic Models
+# ---------------------------------------------
 class PredictRequest(BaseModel):
     job_id: str
     ct: dict | None = None
     audio: dict | None = None
     metadata: dict | None = None
+    image: dict | None = None   # NEW IMAGE MODALITY
 
 
+# ---------------------------------------------
+# Helpers
+# ---------------------------------------------
+def safe_prob(container, key, default=0.0):
+    """Return probability or default."""
+    if isinstance(container, dict):
+        return container.get(key, default)
+    return default
+
+
+def max_prob_from_nodules(nodules, cancer_type):
+    """Return the highest probability for a cancer type among CT nodules."""
+    if not isinstance(nodules, list):
+        return 0.0
+    best = 0.0
+    for n in nodules:
+        if not isinstance(n, dict):
+            continue
+        p = n.get("nodule_probs", {}).get(cancer_type, 0.0)
+        if p > best:
+            best = p
+    return best
+
+
+# ---------------------------------------------
+# Fusion Endpoint
+# ---------------------------------------------
 @app.post("/predict")
 async def predict(req: PredictRequest):
-
-    def safe_get(p, k, default=0.0):
-        return p.get(k, default) if isinstance(p, dict) else default
 
     cancer_types = ["adenocarcinoma", "squamous", "large_cell", "small_cell"]
     fused = {}
@@ -33,41 +52,56 @@ async def predict(req: PredictRequest):
     ct = req.ct or {}
     audio = req.audio or {}
     metadata = req.metadata or {}
+    image = req.image or {}  # NEW
 
-    # Fusion calculation
+    # -----------------------------------------
+    # FUSION — combine all 4 modalities
+    # -----------------------------------------
     for c in cancer_types:
-        vals = []
+        votes = []
 
-        # CT nodules → pick max probability per cancer type
-        nodules = ct.get("nodules", []) if isinstance(ct, dict) else []
-        if nodules:
-            vals.append(max([n.get("nodule_probs", {}).get(c, 0) for n in nodules]))
+        # ---- CT ----
+        if "nodules" in ct:
+            votes.append(max_prob_from_nodules(ct.get("nodules", []), c))
 
-        # Audio
-        vals.append(safe_get(audio.get("audio_probs", {}), c, 0))
+        # ---- Audio ----
+        audio_probs = audio.get("audio_probs", {})
+        votes.append(safe_prob(audio_probs, c, 0))
 
-        # Metadata
-        vals.append(safe_get(metadata.get("metadata_probs", {}), c, 0))
+        # ---- Metadata ----
+        metadata_probs = metadata.get("metadata_probs", {})
+        votes.append(safe_prob(metadata_probs, c, 0))
 
-        fused[c] = sum(vals) / max(1, len(vals))
+        # ---- Image (NEW) ----
+        image_probs = image.get("image_probs", {})
+        votes.append(safe_prob(image_probs, c, 0))
 
-    # normalize
+        # average fusion
+        fused[c] = sum(votes) / max(len(votes), 1)
+
+    # -----------------------------------------
+    # NORMALIZATION
+    # -----------------------------------------
     total = sum(fused.values()) or 1.0
-    for k in fused:
-        fused[k] = fused[k] / total
+    fused = {k: v / total for k, v in fused.items()}
 
+    # Risk score = highest probability
     risk_score = max(fused.values())
 
-    time.sleep(0.2)
-
+    # -----------------------------------------
+    # RESPONSE
+    # -----------------------------------------
     return {
         "job_id": req.job_id,
         "final_probs": fused,
         "risk_score": risk_score,
-        "fusion_embedding": [random.random() for _ in range(32)]
+        "fusion_embedding": [random.random() for _ in range(32)],
     }
 
 
+# ---------------------------------------------
+# LOCAL RUNNER
+# ---------------------------------------------
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8104)

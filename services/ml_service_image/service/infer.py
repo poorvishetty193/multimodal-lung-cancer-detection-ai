@@ -1,38 +1,22 @@
+# infer.py
 import torch
-from PIL import Image
 from torchvision import transforms
-from models import ImageCancerModel
+from PIL import Image
+from models import load_model
 
-LABELS = ["normal", "suspicious", "malignant"]
+def infer(model_path, img_path, classes, img_size=224):
+    model = load_model(model_path, n_classes=len(classes))
 
-
-def load_model(model_path="image_model.pth"):
-    model = ImageCancerModel(num_classes=len(LABELS))
-    model.load_state_dict(torch.load(model_path, map_location="cpu"))
-    model.eval()
-    return model
-
-
-def predict_image(image_path: str, model=None):
-    if model is None:
-        model = load_model()
-
-    tfm = transforms.Compose([
-        transforms.Resize((224, 224)),
-        transforms.ToTensor()
+    tf = transforms.Compose([
+        transforms.Resize((img_size, img_size)),
+        transforms.ToTensor(),
     ])
 
-    img = Image.open(image_path).convert("RGB")
-    tensor = tfm(img).unsqueeze(0)
+    img = Image.open(img_path).convert("RGB")
+    x = tf(img).unsqueeze(0)
 
     with torch.no_grad():
-        logits = model(tensor)
-        probs = torch.softmax(logits, dim=1).numpy()[0]
+        logits = model(x)
+        probs = torch.softmax(logits, dim=1).squeeze()
 
-    result = {
-        "prediction": LABELS[int(probs.argmax())],
-        "probabilities": {
-            label: float(p) for label, p in zip(LABELS, probs)
-        }
-    }
-    return result
+    return {cls: float(probs[i]) for i, cls in enumerate(classes)}

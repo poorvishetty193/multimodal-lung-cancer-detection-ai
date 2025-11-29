@@ -1,58 +1,100 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-import requests
+from PIL import Image
+import torch
+from torchvision import transforms
+from models import load_model
+from io import BytesIO
+from minio import Minio
 import os
-from infer import load_model, predict_image
 
 app = FastAPI()
 
-model = None
+# -----------------------------------------
+# ENV VARS
+# -----------------------------------------
+MODEL_PATH = os.getenv("IMAGE_MODEL_PATH", "/app/models/image_classifier.pt")
+MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "minio:9000")
+MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY", "minio")
+MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY", "minio123")
+BUCKET = os.getenv("STORAGE_BUCKET", "uploads")
 
+# -----------------------------------------
+# INIT MODEL
+# -----------------------------------------
+CLASSES = ["adenocarcinoma", "large.cell.carcinoma", "normal", "squamous.cell.carcinoma"]
 
+model = load_model(MODEL_PATH, n_classes=len(CLASSES))
+model.eval()
+
+transform = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),
+])
+
+# -----------------------------------------
+# INIT MINIO CLIENT
+# -----------------------------------------
+minio_client = Minio(
+    MINIO_ENDPOINT,
+    access_key=MINIO_ACCESS_KEY,
+    secret_key=MINIO_SECRET_KEY,
+    secure=False
+)
+
+# -----------------------------------------
+# REQUEST MODEL
+# -----------------------------------------
 class PredictRequest(BaseModel):
     job_id: str
-    image_object: str  # MinIO path
+    image_object: str  # example: "uploads/<job>/<file>"
+    metadata: dict | None = None
 
 
-@app.on_event("startup")
-def startup():
-    global model
-    if os.path.exists("image_model.pth"):
-        model = load_model()
-        print("Loaded trained PNG/JPG model.")
-    else:
-        print("⚠ No trained model found. Using random weights.")
-
-
-def download_from_minio(path: str):
-    """
-    MinIO object path: uploads/job_id/filename.png
-    This downloads into /tmp inside container.
-    """
-    minio_url = os.getenv("MINIO_ENDPOINT", "minio:9000")
-    bucket = "uploads"
-    local_path = f"/tmp/{os.path.basename(path)}"
-
-    url = f"http://{minio_url}/{bucket}/{path.replace('uploads/', '')}"
-
-    r = requests.get(url)
-    r.raise_for_status()
-
-    with open(local_path, "wb") as f:
-        f.write(r.content)
-
-    return local_path
-
-
+# -----------------------------------------
+# ENDPOINT
+# -----------------------------------------
 @app.post("/predict")
 async def predict(req: PredictRequest):
+
+    # image_object = "uploads/<job_id>/<filename>"
+    object_key = req.image_object.replace("uploads/", "")
+
+    # -------------------------------------
+    # DOWNLOAD FROM MINIO
+    # -------------------------------------
     try:
-        local = download_from_minio(req.image_object)
-        result = predict_image(local, model=model)
+        response = minio_client.get_object(BUCKET, object_key)
+        img_bytes = response.read()
+        image = Image.open(BytesIO(img_bytes)).convert("RGB")
+    except Exception as e:
+        return {"error": f"Failed to load image from MinIO: {str(e)}"}
+
+    # -------------------------------------
+    # INFERENCE
+    # -------------------------------------
+    try:
+        x = transform(image).unsqueeze(0)
+        with torch.no_grad():
+            logits = model(x)
+            probs = torch.softmax(logits, dim=1).squeeze()
+
+        probs_dict = {CLASSES[i]: float(probs[i]) for i in range(len(CLASSES))}
+        embedding = probs.tolist()
 
         return {
             "job_id": req.job_id,
-            "image_result": result
+            "image_probs": probs_dict,
+            "image_embedding": embedding,
         }
+
     except Exception as e:
-        return {"error": str(e)}
+        return {"error": f"Model prediction error: {str(e)}"}
+
+
+# -----------------------------------------
+# LOCAL RUN
+# -----------------------------------------
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8110)

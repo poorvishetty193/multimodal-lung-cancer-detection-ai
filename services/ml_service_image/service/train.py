@@ -1,47 +1,124 @@
+# train.py
+import os
+import argparse
+from tqdm import tqdm
 import torch
-from torchvision import transforms, datasets
+import torch.nn as nn
 from torch.utils.data import DataLoader
-import torch.nn.functional as F
-from torch import optim
-from models import ImageCancerModel
+from torchvision.datasets import ImageFolder
+
+from models import Classifier, save_model
+from utils import get_transforms
 
 
-def train_model(data_dir="data", epochs=5, lr=1e-4, batch_size=8):
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    print("Training on:", device)
+def make_dataloaders(data_root, img_size=224, batch_size=16, num_workers=2):
+    train_tf, infer_tf = get_transforms(img_size)
 
-    transform = transforms.Compose([
-        transforms.Resize((224, 224)),
-        transforms.ToTensor(),
-    ])
+    train_path = os.path.join(data_root, "train")
+    valid_path = os.path.join(data_root, "valid")
 
-    dataset = datasets.ImageFolder(data_dir, transform=transform)
-    loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+    if not os.path.exists(train_path):
+        raise RuntimeError(f"Training folder not found: {train_path}")
 
-    model = ImageCancerModel(num_classes=len(dataset.classes)).to(device)
-    opt = optim.Adam(model.parameters(), lr=lr)
+    if not os.path.exists(valid_path):
+        raise RuntimeError(f"Validation folder not found: {valid_path}")
 
-    for epoch in range(epochs):
+    train_ds = ImageFolder(train_path, transform=train_tf)
+    valid_ds = ImageFolder(valid_path, transform=infer_tf)
+
+    print("\nDetected classes:", train_ds.classes)
+
+    train_loader = DataLoader(
+        train_ds, batch_size=batch_size, shuffle=True,
+        num_workers=num_workers, pin_memory=True
+    )
+
+    valid_loader = DataLoader(
+        valid_ds, batch_size=batch_size, shuffle=False,
+        num_workers=num_workers, pin_memory=True
+    )
+
+    return train_loader, valid_loader, train_ds.classes
+
+
+def train(args):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print("Using device:", device)
+
+    train_loader, valid_loader, classes = make_dataloaders(
+        args.data, args.img_size, args.batch_size, args.num_workers
+    )
+
+    n_classes = len(classes)
+    model = Classifier(n_classes=n_classes, pretrained=True).to(device)
+
+    criterion = nn.CrossEntropyLoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+
+    best_loss = float("inf")
+
+    for epoch in range(1, args.epochs + 1):
+        print(f"\n------ Epoch {epoch}/{args.epochs} ------")
+
+        # --------------------- TRAIN ---------------------
         model.train()
-        total_loss = 0
+        total_train_loss = 0
 
-        for imgs, labels in loader:
+        for imgs, labels in tqdm(train_loader, desc="Training"):
             imgs, labels = imgs.to(device), labels.to(device)
 
-            preds = model(imgs)
-            loss = F.cross_entropy(preds, labels)
-
-            opt.zero_grad()
+            optimizer.zero_grad()
+            outputs = model(imgs)
+            loss = criterion(outputs, labels)
             loss.backward()
-            opt.step()
+            optimizer.step()
 
-            total_loss += loss.item()
+            total_train_loss += loss.item() * imgs.size(0)
 
-        print(f"Epoch {epoch+1}/{epochs} - Loss: {total_loss:.4f}")
+        train_loss = total_train_loss / len(train_loader.dataset)
 
-    torch.save(model.state_dict(), "image_model.pth")
-    print("Model saved → image_model.pth")
+        # --------------------- VALIDATION ---------------------
+        model.eval()
+        total_val_loss = 0
+        correct = 0
+        total = 0
+
+        with torch.no_grad():
+            for imgs, labels in tqdm(valid_loader, desc="Validating"):
+                imgs, labels = imgs.to(device), labels.to(device)
+                outputs = model(imgs)
+                loss = criterion(outputs, labels)
+
+                total_val_loss += loss.item() * imgs.size(0)
+                preds = outputs.argmax(dim=1)
+                correct += (preds == labels).sum().item()
+                total += labels.size(0)
+
+        val_loss = total_val_loss / len(valid_loader.dataset)
+        val_acc = correct / total
+
+        print(f"Train Loss: {train_loss:.4f}")
+        print(f"Valid Loss: {val_loss:.4f} | Acc: {val_acc:.4f}")
+
+        # --------------------- SAVE BEST ---------------------
+        if val_loss < best_loss:
+            best_loss = val_loss
+            os.makedirs(args.out_dir, exist_ok=True)
+            save_path = os.path.join(args.out_dir, "image_classifier.pt")
+            save_model(model, save_path)
+            print("✔ Saved BEST model →", save_path)
 
 
 if __name__ == "__main__":
-    train_model()
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("--data", required=True, help="Path to Data folder")
+    parser.add_argument("--out-dir", default="models", help="Where to save model")
+    parser.add_argument("--epochs", type=int, default=10)
+    parser.add_argument("--batch-size", type=int, default=16)
+    parser.add_argument("--img-size", type=int, default=224)
+    parser.add_argument("--lr", type=float, default=1e-4)
+    parser.add_argument("--num-workers", type=int, default=2)
+
+    args = parser.parse_args()
+    train(args)

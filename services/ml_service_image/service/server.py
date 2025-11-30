@@ -16,7 +16,7 @@ app = FastAPI()
 MODEL_PATH = os.getenv("IMAGE_MODEL_PATH", "/app/models/image_classifier.pt")
 MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "minio:9000")
 MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY", "minio")
-MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY", "minio123")
+MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY")
 BUCKET = os.getenv("STORAGE_BUCKET", "uploads")
 
 # -----------------------------------------

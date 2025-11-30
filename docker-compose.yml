@@ -76,6 +76,8 @@ services:
       context: ./services/ml_service_ct
       dockerfile: Dockerfile
     container_name: lc_ml_ct
+    env_file:
+      - .env
     environment:
       PORT: 8101
     ports:
@@ -171,11 +173,11 @@ services:
       context: ./services/ml_service_image
       dockerfile: Dockerfile
     container_name: lc_ml_image
+    env_file:
+      - .env
     environment:
       PORT: 8110
       MINIO_ENDPOINT: minio:9000
-      MINIO_ACCESS_KEY: minio
-      MINIO_SECRET_KEY: minio123
       STORAGE_BUCKET: uploads
       IMAGE_MODEL_PATH: /app/models/image_classifier.pt
     ports:

@@ -14,7 +14,7 @@ import os
 minio_client = Minio(
     os.getenv("MINIO_ENDPOINT", "minio:9000"),
     access_key=os.getenv("MINIO_ROOT_USER", "minio"),
-    secret_key=os.getenv("MINIO_ROOT_PASSWORD", "minio123"),
+    secret_key=os.getenv("MINIO_ROOT_PASSWORD"),
     secure=False
 )
 

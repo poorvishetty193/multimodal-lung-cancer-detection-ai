@@ -2,80 +2,82 @@
 
 A production-grade multi-modal cancer diagnosis pipeline using CT scans, X-ray images, audio signals, and clinical metadata.
 
-🧩 Problem Statement
+# 🧩 Problem Statement
 
 Lung cancer diagnosis traditionally depends on multiple disconnected sources: CT scans, X-ray images, patient speech biomarkers, and clinical metadata such as age, symptoms, and smoking history.
 Manually interpreting all these modalities is slow, error-prone, and requires high clinical expertise.
 
-Other pain points:
+## Other pain points:
 
-Radiologists must analyze CT slice-by-slice, increasing fatigue and error rates
+- Radiologists must analyze CT slice-by-slice, increasing fatigue and error rates
 
-Image orientation or compression often distorts patterns
+- Image orientation or compression often distorts patterns
 
-Speech anomalies linked to lung obstruction are rarely used due to lack of tools
+- Speech anomalies linked to lung obstruction are rarely used due to lack of tools
 
-Metadata is ignored though it significantly influences cancer probability
+- Metadata is ignored though it significantly influences cancer probability
 
-No unified system exists to combine all modalities for an accurate, reproducible diagnosis
+- No unified system exists to combine all modalities for an accurate, reproducible diagnosis
 
-🎯 Solution Statement
+# 🎯 Solution Statement
 
 This project introduces a fully automated multi-agent diagnostic system that processes:
 
-CT scans (NIfTI / DICOM / ZIP)
+- CT scans (NIfTI / DICOM / ZIP)
 
-Chest X-ray or image files (PNG/JPG)
+- Chest X-ray or image files (PNG/JPG)
 
-Patient audio
+- Patient audio
 
-Patient metadata (age, smoking pack-years, symptoms)
+- Patient metadata (age, smoking pack-years, symptoms)
 
-Each modality is handled by a specialized agent, and outputs are fused by a Fusion Agent to produce:
+- Each modality is handled by a specialized agent, and outputs are fused by a Fusion Agent to produce:
 
-Cancer classification
+- Cancer classification
 
-Risk score
+- Risk score
 
-Reasoning (nodules, anomalies, metadata contribution)
+- Reasoning (nodules, anomalies, metadata contribution)
 
-Heatmaps or probability distributions
+- Heatmaps or probability distributions
 
 This creates a reliable clinical decision support system with consistent accuracy.
 
-🌟 Core Concept & Value
-Concept
+# 🌟 Core Concept & Value
+## Concept
 
 A modular, scalable multi-agent diagnostic pipeline where each modality is handled by an independent ML microservice. Agents collaborate using an orchestrator to deliver final diagnosis.
 
-Value
+### Value
 
-Accelerates diagnosis
+- Accelerates diagnosis
 
-Reduces radiologist workload
+- Reduces radiologist workload
 
-Handles any orientation / compression of images
+- Handles any orientation / compression of images
 
-Uses multi-modal evidence instead of single modality
+- Uses multi-modal evidence instead of single modality
 
-Real-time diagnosis in under 10 seconds
+- Real-time diagnosis in under 10 seconds
 
-New modalities can be added with zero changes to existing agents
+- New modalities can be added with zero changes to existing agents
 
-🚀 The Pitch
-🔥 Problem
+# 🚀 The Pitch
+## 🔥 Problem
 
 Diagnosing lung cancer is slow, inconsistent, and highly dependent on manual interpretation of CT scans alone.
 
-⭐ Solution
+## ⭐ Solution
 
 A multimodal multi-agent system that automatically interprets CT scans, images, audio biomarkers, and metadata — then fuses results into a final diagnosis.
 
-💎 Value
+### 💎 Value
 
 Accurate, scalable AI that reduces diagnostic time, improves consistency, and integrates seamlessly into hospitals or remote diagnosis tools.
 
-🏛 System Architecture
+## 🏛 System Architecture
+
+```
              ┌──────────────────────────────────────────┐
              │              Frontend (React)             │
              │ Upload CT / Image / Audio + Metadata      │
@@ -106,7 +108,7 @@ Accurate, scalable AI that reduces diagnostic time, improves consistency, and in
              │                Results API                │
              │            (Risk Score + Explainability)  │
              └──────────────────────────────────────────┘
-
+```
 ## System Overview
 
 The system uses a Multi-Agent Architecture, including:

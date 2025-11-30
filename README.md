@@ -294,3 +294,22 @@ Your system is now a multi-agent, multi-modal cancer detection platform with:
 - API + Agent Controller
 - Docker microservices
 - Storage + Redis + Logging
+
+---
+
+## 👩‍💻 Author
+
+**Poorvi Shetty**
+💡 Computer Science Student
+📘 Full Stack + Machine Learning Developer
+
+---
+
+## 📝 License
+
+This project is released under the **MIT License**.
+You are free to use, modify, and distribute it for learning or research purposes.
+
+---
+
+### ⭐ If you like this project, give it a star on GitHub! ⭐

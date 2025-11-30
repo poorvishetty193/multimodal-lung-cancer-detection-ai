@@ -2,63 +2,110 @@
 
 A production-grade multi-modal cancer diagnosis pipeline using CT scans, X-ray images, audio signals, and clinical metadata.
 
-## Core Concept & Value
+🧩 Problem Statement
 
-Early lung cancer diagnosis saves lives, but traditional diagnosis depends on:
+Lung cancer diagnosis traditionally depends on multiple disconnected sources: CT scans, X-ray images, patient speech biomarkers, and clinical metadata such as age, symptoms, and smoking history.
+Manually interpreting all these modalities is slow, error-prone, and requires high clinical expertise.
 
-- CT scan interpretation
-- Symptom-based history
-- Radiologist experience
-- Long wait times
-- High expertise requirement
+Other pain points:
 
-Our system uses a multi-modal AI diagnostic pipeline combining:
+Radiologists must analyze CT slice-by-slice, increasing fatigue and error rates
 
-- CT / DICOM / NIfTI
-- X-Ray / PNG / JPG classifier
-- Audio signals (breathing/speech patterns)
-- Clinical metadata (age, smoking, symptoms)
-- Fusion AI model
+Image orientation or compression often distorts patterns
 
-This produces:
+Speech anomalies linked to lung obstruction are rarely used due to lack of tools
 
-- A unified cancer score
-- Type prediction (Adenocarcinoma, Squamous, Large Cell, Small Cell)
-- Nodule detection (CT)
-- Confidence heatmaps
-- Risk explanation
+Metadata is ignored though it significantly influences cancer probability
 
-## The Pitch
+No unified system exists to combine all modalities for an accurate, reproducible diagnosis
 
-### Problem
+🎯 Solution Statement
 
-Lung cancer is often detected too late. Traditional diagnosis suffers from:
+This project introduces a fully automated multi-agent diagnostic system that processes:
 
-- Shortage of radiologists
-- Manual, slow CT scan evaluation
-- Fragmented data (CT, symptoms, audio)
-- High rate of missed nodules
-- No unified scoring
+CT scans (NIfTI / DICOM / ZIP)
 
-### Solution
+Chest X-ray or image files (PNG/JPG)
 
-A multi-agent AI platform that automatically processes:
+Patient audio
 
-- CT scan
-- Image / X-ray
-- Audio diagnosis
-- Metadata reasoning
-- AI fusion engine
+Patient metadata (age, smoking pack-years, symptoms)
 
-### Value
+Each modality is handled by a specialized agent, and outputs are fused by a Fusion Agent to produce:
 
-- Faster diagnosis
-- Reduces radiologist workload
-- Gives consistent high-accuracy predictions
-- Fully automated cloud pipeline
-- Works with multiple modalities (CT, audio, image)
-- Pause/resume long-running operations
-- Agent-based scalable architecture
+Cancer classification
+
+Risk score
+
+Reasoning (nodules, anomalies, metadata contribution)
+
+Heatmaps or probability distributions
+
+This creates a reliable clinical decision support system with consistent accuracy.
+
+🌟 Core Concept & Value
+Concept
+
+A modular, scalable multi-agent diagnostic pipeline where each modality is handled by an independent ML microservice. Agents collaborate using an orchestrator to deliver final diagnosis.
+
+Value
+
+Accelerates diagnosis
+
+Reduces radiologist workload
+
+Handles any orientation / compression of images
+
+Uses multi-modal evidence instead of single modality
+
+Real-time diagnosis in under 10 seconds
+
+New modalities can be added with zero changes to existing agents
+
+🚀 The Pitch
+🔥 Problem
+
+Diagnosing lung cancer is slow, inconsistent, and highly dependent on manual interpretation of CT scans alone.
+
+⭐ Solution
+
+A multimodal multi-agent system that automatically interprets CT scans, images, audio biomarkers, and metadata — then fuses results into a final diagnosis.
+
+💎 Value
+
+Accurate, scalable AI that reduces diagnostic time, improves consistency, and integrates seamlessly into hospitals or remote diagnosis tools.
+
+🏛 System Architecture
+             ┌──────────────────────────────────────────┐
+             │              Frontend (React)             │
+             │ Upload CT / Image / Audio + Metadata      │
+             └──────────────────────────────────────────┘
+                               │
+                               ▼
+┌────────────────────────────────────────────────────────────────────┐
+│                              API (FastAPI)                         │
+│ - Uploads files to MinIO                                          │
+│ - Stores job in Redis                                             │
+│ - Enqueues job                                                     │
+└────────────────────────────────────────────────────────────────────┘
+                               │
+                               ▼
+┌────────────────────────────────────────────────────────────────────┐
+│                        Worker (Task Engine)                        │
+│   Multi-Agent orchestration:                                       │
+│      ├── CT Agent                                                  │
+│      ├── Image Agent                                               │
+│      ├── Audio Agent                                               │
+│      ├── Metadata Agent                                            │
+│      └── Fusion Agent                                              │
+│   Uses long-running job flow (pause/resume)                       │
+└────────────────────────────────────────────────────────────────────┘
+                               │
+                               ▼
+             ┌──────────────────────────────────────────┐
+             │                Results API                │
+             │            (Risk Score + Explainability)  │
+             └──────────────────────────────────────────┘
 
 ## System Overview
 
@@ -283,14 +330,21 @@ docker compose up
 | Add A2A LLM-based decision agent             | ⏳ Planned |
 | Add monitoring dashboards                    | ⏳ Planned |
 
-## Final Note
+---
 
-Your system is now a multi-agent, multi-modal cancer detection platform with:
+## 👩‍💻 Author
 
-- Real trained X-ray model
-- Multi-service architecture
-- CT / Audio / Metadata / Fusion
-- Worker queue
-- API + Agent Controller
-- Docker microservices
-- Storage + Redis + Logging
+**Poorvi Shetty**
+💡 Computer Science Student
+📘 Full Stack + Machine Learning Developer
+
+---
+
+## 📝 License
+
+This project is released under the **MIT License**.
+You are free to use, modify, and distribute it for learning or research purposes.
+
+---
+
+### ⭐ If you like this project, give it a star on GitHub! ⭐

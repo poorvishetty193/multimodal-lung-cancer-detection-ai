@@ -21,6 +21,7 @@ services:
 
       # ML service URLs
       ML_CT_URL: http://ml_ct:8101/predict
+      ML_IMAGE_URL: http://ml_image:8110/predict
       ML_AUDIO_URL: http://ml_audio:8102/predict
       ML_META_URL: http://ml_meta:8103/predict
       ML_FUSION_URL: http://ml_fusion:8104/predict
@@ -33,6 +34,7 @@ services:
       - ml_audio
       - ml_meta
       - ml_fusion
+      - ml_image
     volumes:
       - ./services/api/app:/app
 
@@ -53,6 +55,7 @@ services:
 
       # ML URLs
       ML_CT_URL: http://ml_ct:8101/predict
+      ML_IMAGE_URL: http://ml_image:8110/predict
       ML_AUDIO_URL: http://ml_audio:8102/predict
       ML_META_URL: http://ml_meta:8103/predict
       ML_FUSION_URL: http://ml_fusion:8104/predict
@@ -64,6 +67,7 @@ services:
       - ml_audio
       - ml_meta
       - ml_fusion
+      - ml_image
     volumes:
       - ./services/worker:/app
 
@@ -163,21 +167,21 @@ services:
       - pgdata:/var/lib/postgresql/data
 
   ml_image:
-  build:
-    context: ./services/ml_service_image
-    dockerfile: Dockerfile
-  container_name: lc_ml_image
-  environment:
-    PORT: 8110
-    MINIO_ENDPOINT: minio:9000
-    MINIO_ACCESS_KEY: minio
-    MINIO_SECRET_KEY: minio123
-    STORAGE_BUCKET: uploads
-    IMAGE_MODEL_PATH: /app/models/image_classifier.pt
-  ports:
-    - "8110:8110"
-  volumes:
-    - ./services/ml_service_image/service:/app/service
+    build:
+      context: ./services/ml_service_image
+      dockerfile: Dockerfile
+    container_name: lc_ml_image
+    environment:
+      PORT: 8110
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: minio
+      MINIO_SECRET_KEY: minio123
+      STORAGE_BUCKET: uploads
+      IMAGE_MODEL_PATH: /app/models/image_classifier.pt
+    ports:
+      - "8110:8110"
+    volumes:
+      - ./services/ml_service_image/service:/app/service
 
 
 

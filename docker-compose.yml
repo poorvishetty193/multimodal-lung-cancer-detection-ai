@@ -1,6 +1,7 @@
 version: '3.8'
 
 services:
+
   api:
     build:
       context: ./services/api
@@ -13,23 +14,27 @@ services:
     environment:
       MINIO_ENDPOINT: minio:9000
       STORAGE_BUCKET: uploads
+      REDIS_URL: redis://redis:6379/1
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       CELERY_BROKER: amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672//
       CELERY_BACKEND: redis://redis:6379/0
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-      REDIS_URL: redis://redis:6379/1
+
+      # ML service URLs
       ML_CT_URL: http://ml_ct:8101/predict
+      ML_IMAGE_URL: http://ml_image:8110/predict
       ML_AUDIO_URL: http://ml_audio:8102/predict
       ML_META_URL: http://ml_meta:8103/predict
       ML_FUSION_URL: http://ml_fusion:8104/predict
     depends_on:
-      - rabbitmq
       - redis
-      - minio
+      - rabbitmq
       - postgres
+      - minio
       - ml_ct
       - ml_audio
       - ml_meta
       - ml_fusion
+      - ml_image
     volumes:
       - ./services/api/app:/app
 
@@ -43,22 +48,26 @@ services:
     environment:
       MINIO_ENDPOINT: minio:9000
       STORAGE_BUCKET: uploads
+      REDIS_URL: redis://redis:6379/1
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       CELERY_BROKER: amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672//
       CELERY_BACKEND: redis://redis:6379/0
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-      REDIS_URL: redis://redis:6379/1
+
+      # ML URLs
       ML_CT_URL: http://ml_ct:8101/predict
+      ML_IMAGE_URL: http://ml_image:8110/predict
       ML_AUDIO_URL: http://ml_audio:8102/predict
       ML_META_URL: http://ml_meta:8103/predict
       ML_FUSION_URL: http://ml_fusion:8104/predict
     depends_on:
-      - rabbitmq
       - redis
+      - rabbitmq
       - minio
       - ml_ct
       - ml_audio
       - ml_meta
       - ml_fusion
+      - ml_image
     volumes:
       - ./services/worker:/app
 
@@ -67,6 +76,8 @@ services:
       context: ./services/ml_service_ct
       dockerfile: Dockerfile
     container_name: lc_ml_ct
+    env_file:
+      - .env
     environment:
       PORT: 8101
     ports:
@@ -149,13 +160,32 @@ services:
     env_file:
       - .env
     environment:
+      POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+
+  ml_image:
+    build:
+      context: ./services/ml_service_image
+      dockerfile: Dockerfile
+    container_name: lc_ml_image
+    env_file:
+      - .env
+    environment:
+      PORT: 8110
+      MINIO_ENDPOINT: minio:9000
+      STORAGE_BUCKET: uploads
+      IMAGE_MODEL_PATH: /app/models/image_classifier.pt
+    ports:
+      - "8110:8110"
+    volumes:
+      - ./services/ml_service_image/service:/app/service
+
+
 
 volumes:
   minio_data:

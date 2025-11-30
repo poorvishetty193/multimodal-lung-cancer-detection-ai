@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     MINIO_ENDPOINT: str = os.getenv("MINIO_ENDPOINT", "minio:9000")
     MINIO_ACCESS_KEY: str = os.getenv("MINIO_ACCESS_KEY", "minio")
-    MINIO_SECRET_KEY: str = os.getenv("MINIO_SECRET_KEY", "minio123")
+    MINIO_SECRET_KEY: str = os.getenv("MINIO_SECRET_KEY")
     STORAGE_BUCKET: str = os.getenv("STORAGE_BUCKET", "uploads")
     CELERY_BROKER: str = os.getenv("CELERY_BROKER", "amqp://guest:guest@rabbitmq:5672//")
     CELERY_BACKEND: str = os.getenv("CELERY_BACKEND", "redis://redis:6379/0")

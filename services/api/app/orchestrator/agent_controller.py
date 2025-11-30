@@ -1,14 +1,18 @@
 import requests
 from core.config import settings
-from orchestrator.a2a_protocol import make_message
 from core.logger import logger
-import time, json
+
 
 class AgentController:
     """
-    Orchestrates modality agents (CT, Audio, Metadata) in parallel,
-    waits for results, calls fusion, and returns the final result.
-    Note: this starter uses HTTP to call microservices. Replace with gRPC or direct calls as needed.
+    Orchestrates all modality services (CT / Image, Audio, Metadata)
+    and then calls the Fusion service.
+
+    Works with:
+    - Optional audio
+    - PNG/JPG/JPEG images
+    - DICOM ZIP / CT ZIP
+    - Metadata (age, pack-years, symptoms)
     """
 
     def __init__(self):
@@ -17,59 +21,92 @@ class AgentController:
         self.meta_url = settings.ML_META_URL
         self.fusion_url = settings.ML_FUSION_URL
 
-    def run_all(self, job_id: str, storage_objects: dict, metadata: dict, job_control=None):
+    def _call(self, url, payload, timeout, label):
+        """Internal helper for clean request/exception handling."""
+        try:
+            logger.info(f"[AgentController] Calling {label} service → {url}")
+            r = requests.post(url, json=payload, timeout=timeout)
+            r.raise_for_status()
+            return r.json()
+        except Exception as e:
+            logger.exception(f"{label} service failed")
+            return {"error": str(e)}
+
+    def run_all(self, job_id: str, objects: dict, metadata: dict, job_control=None):
         """
-        storage_objects: dict with keys 'ct', 'audio' each containing a presigned URL or object path
-        metadata: parsed metadata dict
-        job_control: callable that returns dict(job_state, should_pause)
+        objects = {
+            "ct": "uploads/jobid/file",
+            "audio": "uploads/jobid/file" OR None
+        }
+        metadata = parsed dict from the upload
         """
-        logger.info(f"AgentController: starting run_all for job {job_id}")
+
+        logger.info(f"[AgentController] Starting job {job_id}")
         results = {}
 
-        # Launch parallel HTTP requests (simple approach)
-        # CT
-        try:
-            ct_payload = {"job_id": job_id, "ct_object": storage_objects.get("ct"), "metadata": metadata}
-            logger.info("Calling CT service")
-            r_ct = requests.post(self.ct_url, json=ct_payload, timeout=300)
-            r_ct.raise_for_status()
-            results['ct'] = r_ct.json()
-        except Exception as e:
-            logger.exception("CT service failed")
-            results['ct'] = {"error": str(e)}
+        # ---------------------------------------------------------
+        #   CT / IMAGE MODEL  (mandatory)
+        # ---------------------------------------------------------
+        ct_payload = {
+            "job_id": job_id,
+            "ct_object": objects.get("ct"),
+            "metadata": metadata
+        }
+        results["ct"] = self._call(
+            self.ct_url,
+            ct_payload,
+            timeout=200,
+            label="CT/Image"
+        )
 
-        # Audio
-        try:
-            audio_payload = {"job_id": job_id, "audio_object": storage_objects.get("audio"), "metadata": metadata}
-            logger.info("Calling Audio service")
-            r_audio = requests.post(self.audio_url, json=audio_payload, timeout=120)
-            r_audio.raise_for_status()
-            results['audio'] = r_audio.json()
-        except Exception as e:
-            logger.exception("Audio service failed")
-            results['audio'] = {"error": str(e)}
+        # ---------------------------------------------------------
+        #   AUDIO MODEL (optional)
+        # ---------------------------------------------------------
+        audio_obj = objects.get("audio")
+        if audio_obj:
+            audio_payload = {
+                "job_id": job_id,
+                "audio_object": audio_obj
+            }
+            results["audio"] = self._call(
+                self.audio_url,
+                audio_payload,
+                timeout=120,
+                label="Audio"
+            )
+        else:
+            logger.info("[AgentController] No audio provided for this job.")
+            results["audio"] = {"note": "Audio file not provided"}
 
-        # Metadata model
-        try:
-            meta_payload = {"job_id": job_id, "metadata": metadata}
-            logger.info("Calling Metadata service")
-            r_meta = requests.post(self.meta_url, json=meta_payload, timeout=30)
-            r_meta.raise_for_status()
-            results['metadata'] = r_meta.json()
-        except Exception as e:
-            logger.exception("Metadata service failed")
-            results['metadata'] = {"error": str(e)}
+        # ---------------------------------------------------------
+        #   METADATA MODEL
+        # ---------------------------------------------------------
+        meta_payload = {
+            "job_id": job_id,
+            "metadata": metadata
+        }
+        results["metadata"] = self._call(
+            self.meta_url,
+            meta_payload,
+            timeout=40,
+            label="Metadata"
+        )
 
-        # Call fusion with gathered results
-        try:
-            fusion_payload = {"job_id": job_id, "ct": results.get('ct'), "audio": results.get('audio'), "metadata": results.get('metadata')}
-            logger.info("Calling Fusion service")
-            r_fuse = requests.post(self.fusion_url, json=fusion_payload, timeout=60)
-            r_fuse.raise_for_status()
-            results['fusion'] = r_fuse.json()
-        except Exception as e:
-            logger.exception("Fusion service failed")
-            results['fusion'] = {"error": str(e)}
+        # ---------------------------------------------------------
+        #   FUSION MODEL
+        # ---------------------------------------------------------
+        fusion_payload = {
+            "job_id": job_id,
+            "ct": results["ct"],
+            "audio": results["audio"],
+            "metadata": results["metadata"]
+        }
+        results["fusion"] = self._call(
+            self.fusion_url,
+            fusion_payload,
+            timeout=120,
+            label="Fusion"
+        )
 
-        logger.info(f"AgentController: finished run_all for job {job_id}")
+        logger.info(f"[AgentController] Completed job {job_id}")
         return results

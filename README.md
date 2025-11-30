@@ -283,18 +283,6 @@ docker compose up
 | Add A2A LLM-based decision agent             | ⏳ Planned |
 | Add monitoring dashboards                    | ⏳ Planned |
 
-## Final Note
-
-Your system is now a multi-agent, multi-modal cancer detection platform with:
-
-- Real trained X-ray model
-- Multi-service architecture
-- CT / Audio / Metadata / Fusion
-- Worker queue
-- API + Agent Controller
-- Docker microservices
-- Storage + Redis + Logging
-
 ---
 
 ## 👩‍💻 Author

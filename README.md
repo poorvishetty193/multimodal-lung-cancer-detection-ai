@@ -323,8 +323,6 @@ docker compose up
 
 | Feature                                      | Status    |
 |----------------------------------------------|-----------|
-| Replace dummy CT model with real nodule detector | ⏳ Pending |
-| Replace audio dummy model                    | ⏳ Pending |
 | Add LLM-powered radiology report generator   | ⏳ Planned |
 | Heatmap visualisation (Grad-CAM)             | ⏳ Pending |
 | Full UI dashboard                            | ⏳ Pending |
